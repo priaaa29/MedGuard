@@ -29,3 +29,60 @@ Metformin,Alcohol,Lactic Acidosis Risk,High,Serious complication,Avoid alcohol
 Amlodipine,Grapefruit Juice,Metabolism Affected,High,Increases drug concentration,Avoid grapefruit
 Atorvastatin,Grapefruit Juice,Toxicity Risk,High,Increases statin levels,Avoid grapefruit
 Iron Supplements,Milk,Absorption Reduced,High,Calcium blocks iron absorption,Avoid dairy
+Warfarin,Alcohol,Bleeding Risk,High,Increases bleeding risk,Avoid alcohol completely
+Warfarin,Garlic,Effect Increased,Medium,May increase bleeding tendency,Limit garlic intake
+Insulin,Alcohol,Hypoglycemia Risk,High,Can dangerously lower blood sugar,Avoid alcohol or monitor closely
+Insulin,Sugary Foods,Effect Counteracted,Medium,Raises blood glucose,Control sugar intake
+Omeprazole,Spicy Food,Stomach Irritation,Low,May worsen acid reflux,Avoid spicy meals
+Pantoprazole,Coffee,Acid Increase,Medium,Can trigger acidity,Limit coffee intake
+Levothyroxine,Coffee,Absorption Reduced,High,Reduces effectiveness,Take on empty stomach before coffee
+Levothyroxine,Calcium Supplements,Absorption Reduced,High,Blocks hormone absorption,Take 4 hours apart
+Amoxicillin,Spicy Food,Stomach Irritation,Low,May increase discomfort,Avoid spicy food
+Ciprofloxacin,Alcohol,Side Effects Increased,Medium,May cause dizziness,Avoid alcohol
+Metronidazole,Alcohol,Severe Reaction,High,Can cause nausea and vomiting,Avoid alcohol completely
+Antacids,Milk,Reduced Effectiveness,Medium,Neutralizes acid differently,Limit milk intake
+Vitamin C,Alcohol,Absorption Reduced,Low,Reduces vitamin absorption,Limit alcohol
+Zinc Supplements,Tea/Coffee,Absorption Reduced,Medium,Tannins reduce absorption,Avoid tea/coffee nearby
+Magnesium Supplements,Dairy,Absorption Reduced,Medium,Calcium interferes with absorption,Take separately
+Losartan,Potassium-rich foods,Potassium Increase,High,Can lead to high potassium levels,Limit potassium intake
+Losartan,Alcohol,Blood Pressure Drop,Medium,May cause dizziness,Limit alcohol
+Enalapril,Potassium-rich foods,Potassium Increase,High,Hyperkalemia risk,Avoid excess potassium
+Enalapril,Alcohol,Blood Pressure Drop,Medium,Increases dizziness,Limit alcohol
+Atenolol,Caffeine,Reduced Effectiveness,Medium,May reduce drug effect,Limit caffeine
+Atenolol,Alcohol,Blood Pressure Drop,Medium,May cause dizziness,Limit alcohol
+Propranolol,Caffeine,Reduced Effectiveness,Medium,Opposes beta-blocker effect,Avoid excess caffeine
+Propranolol,Alcohol,Increased Side Effects,Medium,Drowsiness and dizziness,Limit alcohol
+Clopidogrel,Alcohol,Bleeding Risk,High,Increases bleeding,Avoid alcohol
+Clopidogrel,Grapefruit Juice,Metabolism Affected,Medium,Alters effectiveness,Avoid grapefruit
+Digoxin,High Fiber Foods,Absorption Reduced,Medium,Reduces absorption,Take separately
+Digoxin,Licorice,Toxicity Risk,High,Increases toxicity risk,Avoid licorice
+Furosemide,Salt,Effect Reduced,Medium,Reduces diuretic effect,Limit salt intake
+Furosemide,Alcohol,Dehydration Risk,High,Increases dehydration,Avoid alcohol
+Spironolactone,Potassium-rich foods,Hyperkalemia Risk,High,Can cause high potassium,Avoid excess potassium
+Spironolactone,Alcohol,Dizziness,Medium,May cause dizziness,Limit alcohol
+Prednisone,Salt,Fluid Retention,Medium,Increases swelling,Limit salt
+Prednisone,Sugar,Glucose Increase,High,Raises blood sugar,Limit sugar intake
+Alprazolam,Alcohol,Severe Sedation,High,Can depress breathing,Avoid alcohol completely
+Diazepam,Alcohol,Severe Sedation,High,Respiratory depression risk,Avoid alcohol
+Sertraline,Alcohol,Increased Side Effects,Medium,Drowsiness and dizziness,Avoid alcohol
+Fluoxetine,Alcohol,Increased Side Effects,Medium,May impair judgment,Avoid alcohol
+Escitalopram,Alcohol,Drowsiness,Medium,Increases sedation,Limit alcohol
+Amoxicillin-Clavulanate,Alcohol,Side Effects Increased,Low,May cause nausea,Avoid alcohol
+Cephalexin,Alcohol,Side Effects Increased,Low,May cause dizziness,Limit alcohol
+Ranitidine,Alcohol,Reduced Effectiveness,Medium,Increases acidity,Limit alcohol
+Famotidine,Caffeine,Acid Increase,Medium,May worsen reflux,Limit caffeine
+Montelukast,Alcohol,Drowsiness,Low,May increase sleepiness,Limit alcohol
+Salbutamol,Caffeine,Increased Heart Rate,Medium,May cause palpitations,Limit caffeine
+Theophylline,Caffeine,Toxicity Risk,High,Increases side effects,Avoid caffeine
+Insulin Aspart,Alcohol,Hypoglycemia Risk,High,Can lower sugar dangerously,Avoid alcohol
+Glimepiride,Alcohol,Hypoglycemia Risk,High,Can cause low sugar,Avoid alcohol
+Gliclazide,Alcohol,Hypoglycemia Risk,High,Low sugar risk,Avoid alcohol
+Pioglitazone,Alcohol,Liver Stress,Medium,May affect liver,Limit alcohol
+Rosuvastatin,Grapefruit Juice,Metabolism Affected,Medium,Increases drug levels,Avoid grapefruit
+Simvastatin,Grapefruit Juice,Toxicity Risk,High,Increases muscle damage risk,Avoid grapefruit
+Omeprazole,Alcohol,Stomach Irritation,Low,May worsen symptoms,Limit alcohol
+Pantoprazole,Spicy Food,Acid Increase,Medium,May worsen reflux,Avoid spicy food
+Domperidone,High Fat Meals,Delayed Absorption,Medium,Slows drug action,Take before meals
+Ondansetron,Alcohol,Drowsiness,Low,May increase sedation,Limit alcohol
+Cetirizine,Alcohol,Drowsiness,Medium,Increases sleepiness,Avoid alcohol
+Loratadine,Alcohol,Drowsiness,Low,May increase sedation,Limit alcohol
