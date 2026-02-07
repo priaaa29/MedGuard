@@ -1,0 +1,31 @@
+Medicine,Food,Interaction_Type,Severity,Effect,Recommendation
+Tetracycline,Milk,Absorption Reduced,High,Calcium binds drug and reduces effectiveness,Take 2 hours before or after dairy
+Amoxicillin,Alcohol,Side Effects Increased,Medium,Increased stomach irritation,Avoid alcohol during course
+Paracetamol,Alcohol,Toxicity Risk,High,Liver damage risk increases,Avoid alcohol completely
+Ibuprofen,Alcohol,Stomach Irritation,Medium,Increased risk of gastric bleeding,Limit or avoid alcohol
+Iron Supplements,Tea/Coffee,Absorption Reduced,High,Tannins reduce iron absorption,Avoid tea/coffee 1 hour before/after
+Metformin,Alcohol,Lactic Acidosis Risk,High,Serious metabolic complication,Avoid alcohol
+Ciprofloxacin,Milk,Absorption Reduced,High,Dairy reduces drug absorption,Avoid dairy close to dosage
+Aspirin,Spicy Food,Stomach Irritation,Medium,Increased gastric discomfort,Avoid spicy food
+Vitamin D,High Fiber Foods,Absorption Reduced,Low,Fiber may reduce absorption slightly,Take separately from high fiber meals
+Levothyroxine,Soy Products,Absorption Reduced,High,Soy interferes with absorption,Take on empty stomach
+Warfarin,Green Leafy Vegetables,Effect Altered,High,Vitamin K affects drug action,Maintain consistent intake
+Antihistamines,Grapefruit Juice,Metabolism Affected,Medium,Alters drug metabolism,Avoid grapefruit juice
+Statins,Grapefruit Juice,Toxicity Risk,High,Increases drug concentration,Avoid grapefruit completely
+Antibiotics (General),Sugary Foods,Effect Reduced,Low,May affect gut response,Limit sugar intake
+Calcium Supplements,Spinach,Absorption Reduced,Medium,Oxalates reduce calcium absorption,Avoid taking together
+Doxycycline,Milk,Absorption Reduced,High,Dairy reduces effectiveness,Avoid dairy 2 hours before/after
+Doxycycline,Iron Supplements,Absorption Reduced,High,Iron binds drug,Avoid taking together
+Azithromycin,Alcohol,Side Effects Increased,Low,May increase dizziness,Avoid alcohol
+Ciprofloxacin,Caffeine,Metabolism Affected,Medium,Increases caffeine effect,Limit caffeine intake
+Ibuprofen,Spicy Food,Stomach Irritation,Medium,Increases gastric discomfort,Avoid spicy food
+Aspirin,Alcohol,Stomach Bleeding Risk,High,Increases bleeding risk,Avoid alcohol
+Diclofenac,Alcohol,Liver Stress,High,Increases liver damage risk,Avoid alcohol
+Calcium Supplements,Milk,Excess Intake,Low,Too much calcium,Monitor intake
+Calcium Supplements,Spinach,Absorption Reduced,Medium,Oxalates block calcium,Avoid taking together
+Vitamin B12,Alcohol,Absorption Reduced,Medium,Reduces vitamin absorption,Limit alcohol
+Metformin,Sugary Foods,Effect Reduced,Medium,Counteracts glucose control,Limit sugar intake
+Metformin,Alcohol,Lactic Acidosis Risk,High,Serious complication,Avoid alcohol
+Amlodipine,Grapefruit Juice,Metabolism Affected,High,Increases drug concentration,Avoid grapefruit
+Atorvastatin,Grapefruit Juice,Toxicity Risk,High,Increases statin levels,Avoid grapefruit
+Iron Supplements,Milk,Absorption Reduced,High,Calcium blocks iron absorption,Avoid dairy
