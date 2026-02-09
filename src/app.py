@@ -60,10 +60,21 @@ if st.button("Check"):
                     st.write(f"Fix: {row['Recommendation']}")
                     st.markdown("---")
 
+            if result is not None and not result.empty:
+                if any(result["Severity"] == "High"):
+                    st.error("🚨 Critical interactions detected. Adjust habits immediately.")
+                elif any(result["Severity"] == "Medium"):
+                    st.warning("⚠️ Some interactions may affect effectiveness.")
+                else:
+                    st.success("✅ No major risks detected.")
+
         else:
             if result is None and score >= 50:
                 st.warning(f"Did you mean: {matched_name}?")
             st.error("Medicine not found. Try a different spelling.")
 
+
+
 st.markdown("---")
 st.info("⚠️ This tool is for awareness only and not a substitute for professional medical advice.")
+st.caption("Dataset currently covers ~100 common medicines. Results may not include all possible interactions.")

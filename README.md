@@ -19,8 +19,8 @@ Custom-built dataset of medicine–food interactions from real medical sources.
 ## 🛠️ Tech Stack
 - Python
 - Pandas
+- Streamlit
 
 ## 🚀 Future Work
 - Risk scoring model
 - User habit simulation
-- Streamlit dashboard
