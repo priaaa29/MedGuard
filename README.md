@@ -24,3 +24,12 @@ Custom-built dataset of medicine–food interactions from real medical sources.
 ## 🚀 Future Work
 - Risk scoring model
 - User habit simulation
+
+## 🖥️ App Preview
+
+### Home Screen
+![Home](assets/Home-UI.png)
+
+### Example Result
+![Result](assets/Working.png)
+
