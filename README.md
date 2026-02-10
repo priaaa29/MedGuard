@@ -33,3 +33,5 @@ Custom-built dataset of medicine–food interactions from real medical sources.
 ### Example Result
 ![Result](assets/Working.png)
 
+## 🚀 Live Demo
+[Try MedGuard AI](https://medguard29.streamlit.app)
