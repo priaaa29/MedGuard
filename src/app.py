@@ -4,7 +4,7 @@ result = None
 
 st.set_page_config(page_title="MedGuard AI", layout="centered")
 
-st.markdown("## 🧠 MedGuard AI")
+st.markdown("## 🧠 MedGuard ")
 st.caption("Detect risky food interactions for your medicines in seconds")
 
 medicine = st.text_input("Enter Medicine Name")
