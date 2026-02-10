@@ -1,29 +1,86 @@
-# MedGuard AI
+# 🧠 MedGuard AI
 
-A decision-support system that detects risky medicine + food interactions and provides actionable recommendations.
+MedGuard AI is a decision-support system that detects risky food–medicine interactions and provides clear, actionable recommendations.
 
-## 🚨 Problem
-Most people take medicines without understanding how their daily habits (like food) affect effectiveness.
+Most people take medicines without realizing that everyday habits (like food or drinks) can reduce effectiveness or cause harm.  
+This system is designed to surface those hidden risks in a simple and usable way.
 
-## 💡 Solution
-MedGuard AI identifies harmful interactions and suggests safer alternatives.
+---
 
-## ⚙️ Features
-- Drug–food interaction detection
-- Severity-based risk classification
-- Actionable recommendations
+## 🚨 The Problem
+
+Medicine instructions often miss real-world context.
+
+People unknowingly:
+- reduce drug effectiveness  
+- increase side effects  
+- or create harmful interactions  
+
+---
+
+## 💡 What This System Does
+
+MedGuard AI:
+- Identifies food–medicine interactions  
+- Classifies their severity (High / Medium / Low)  
+- Explains why the interaction matters  
+- Suggests what the user should do  
+
+---
+
+## ⚙️ Key Features
+
+- 🔍 Fuzzy search (handles typos like *paracitamol*)
+- ⚠️ Risk-based grouping (High / Medium / Low)
+- 🧠 Structured interaction insights (not raw data)
+- 💡 Actionable recommendations
+- 📊 Custom dataset covering 100+ medicines
+
+---
+
+## 🧠 How It Works
+
+1. User enters a medicine name  
+2. System uses fuzzy matching to find the closest match  
+3. Retrieves all known food interactions  
+4. Groups them by severity  
+5. Displays clear explanations and recommended actions  
+
+---
 
 ## 📊 Dataset
-Custom-built dataset of medicine–food interactions from real medical sources.
+
+The dataset is manually structured from real-world medical sources and designed for decision-making, not just analysis.
+
+---
 
 ## 🛠️ Tech Stack
-- Python
-- Pandas
-- Streamlit
 
-## 🚀 Future Work
-- Risk scoring model
-- User habit simulation
+- Python  
+- Pandas  
+- Streamlit  
+- RapidFuzz  
+
+---
+
+## 🎯 Project Goal
+
+To move beyond basic data analysis and build systems that help people make better real-world decisions.
+
+---
+
+## 🚀 Future Improvements
+
+- User habit-based risk scoring  
+- Personalized recommendations  
+- Expanded dataset coverage  
+- API integration for dynamic updates  
+
+---
+
+## ⚠️ Disclaimer
+
+This tool is for awareness only and not a substitute for professional medical advice.
 
 ## 🖥️ App Preview
 
