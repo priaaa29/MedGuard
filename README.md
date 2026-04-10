@@ -1,4 +1,4 @@
-# 🧠 MedGuard AI
+# 🧠 MedGuard
 
 MedGuard AI is a decision-support system that detects risky food–medicine interactions and provides clear, actionable recommendations.
 
