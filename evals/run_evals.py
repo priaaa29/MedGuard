@@ -11,6 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from agents.orchestrator import MedGuardOrchestrator
 from agents.safety_guard_agent import SafetyGuardAgent
 import memory.memory_bank as memory_bank
+import tools.audit_logger as audit_logger
 
 
 TEST_CASES_PATH = Path(__file__).resolve().parent / "test_cases.json"
@@ -256,7 +257,15 @@ def run_test_case(test_case):
 
 def main():
     test_cases = load_test_cases()
-    results = [run_test_case(test_case) for test_case in test_cases]
+
+    # Keep eval queries out of the real audit log.
+    original_log_path = audit_logger.LOG_PATH
+    with TemporaryDirectory() as temp_dir:
+        audit_logger.LOG_PATH = Path(temp_dir) / "audit.jsonl"
+        try:
+            results = [run_test_case(test_case) for test_case in test_cases]
+        finally:
+            audit_logger.LOG_PATH = original_log_path
     passed = sum(1 for result in results if result["status"] == "PASS")
     failed = len(results) - passed
 
@@ -267,8 +276,10 @@ def main():
         "results": results,
     }
 
-    with RESULTS_PATH.open("w", encoding="utf-8") as file:
-        json.dump(summary, file, indent=2)
+    # Only overwrite the committed results snapshot when asked to.
+    if "--save" in sys.argv:
+        with RESULTS_PATH.open("w", encoding="utf-8") as file:
+            json.dump(summary, file, indent=2)
 
     for result in results:
         print(f"{result['status']} {result['test_id']} - {result['description']}")
