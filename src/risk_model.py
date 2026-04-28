@@ -1,10 +1,17 @@
 from pathlib import Path
 
 import pandas as pd
-from rapidfuzz import process
+from rapidfuzz import fuzz, process
+
+# fuzz.ratio is plain normalized edit distance. The default WRatio scorer gives
+# partial-substring matches high scores (e.g. "tea" -> Amoxicillin-Clavulanate
+# at 72), which is unsafe for medicine lookup.
+MATCH_THRESHOLD = 80
 
 
-DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "drug_food_interactions.csv"
+DATA_PATH = (
+    Path(__file__).resolve().parent.parent / "backend" / "data" / "drug_food_interactions.csv"
+)
 REQUIRED_COLUMNS = {
     "Medicine",
     "Food",
@@ -89,16 +96,21 @@ frequency_map = {
 }
 
 
+MEDICINE_LOOKUP = {
+    med.lower(): med for med in sorted(df["Medicine"].dropna().unique())
+}
+MEDICINE_KEYS = list(MEDICINE_LOOKUP.keys())
+
+
 def get_medicine_info(medicine):
     medicine = medicine.strip()
-    medicine_lookup = {
-        med.lower(): med for med in sorted(df["Medicine"].dropna().unique())
-    }
-    medicine_list = list(medicine_lookup.keys())
+    medicine_lookup = MEDICINE_LOOKUP
 
-    match, score, _ = process.extractOne(medicine.lower(), medicine_list)
+    match, score, _ = process.extractOne(
+        medicine.lower(), MEDICINE_KEYS, scorer=fuzz.ratio
+    )
 
-    if score >= 70:
+    if score >= MATCH_THRESHOLD:
         result = df[df["Medicine"].str.lower() == match]
         return result, medicine_lookup[match], score
     else:
