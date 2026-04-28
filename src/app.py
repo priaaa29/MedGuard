@@ -42,6 +42,7 @@ def init_session_state():
         "last_agent_result": None,
         "query_input": "",
         "ocr_text": "",
+        "processed_upload_id": None,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -315,7 +316,13 @@ with check_tab:
     uploaded_image = st.file_uploader(
         "Or upload prescription image", type=["jpg", "jpeg", "png"]
     )
-    if uploaded_image is not None:
+    # Streamlit keeps the upload across reruns, so only run OCR once per file;
+    # otherwise every button click re-runs OCR and logs a duplicate query.
+    if (
+        uploaded_image is not None
+        and uploaded_image.file_id != st.session_state.processed_upload_id
+    ):
+        st.session_state.processed_upload_id = uploaded_image.file_id
         suffix = Path(uploaded_image.name).suffix or ".png"
         with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
             temp_file.write(uploaded_image.getbuffer())
