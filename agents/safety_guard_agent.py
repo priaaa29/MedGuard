@@ -1,4 +1,18 @@
+import re
+
 BLOCKED_TERMS = ("diagnose", "diagnosis", "cure", "treat", "prescription")
+# Whole words only, so "treatment" or "untreated" are left alone.
+BLOCKED_PATTERN = re.compile(
+    r"\b(" + "|".join(BLOCKED_TERMS) + r")\b", flags=re.IGNORECASE
+)
+
+
+def _sanitize(text):
+    def replace(match):
+        word = match.group(0)
+        return "Medical advice" if word[0].isupper() else "medical advice"
+
+    return BLOCKED_PATTERN.sub(replace, text)
 ESCALATION_TEXT = (
     "Contact a doctor or pharmacist before changing habits or medication. Seek "
     "emergency help immediately for severe symptoms such as trouble breathing, "
@@ -21,13 +35,20 @@ class SafetyGuardAgent:
             modifications.append("blocked_low_confidence")
 
         summary = final_recommendation.get("summary", "")
-        sanitized_summary = summary
-        for term in BLOCKED_TERMS:
-            sanitized_summary = sanitized_summary.replace(term, "medical advice")
-            sanitized_summary = sanitized_summary.replace(term.title(), "Medical advice")
+        sanitized_summary = _sanitize(summary)
+        changed = sanitized_summary != summary
+        final_recommendation["summary"] = sanitized_summary
 
-        if sanitized_summary != summary:
-            final_recommendation["summary"] = sanitized_summary
+        sanitized_items = []
+        for item in final_recommendation.get("recommendations", []):
+            item = dict(item)
+            text = item.get("recommendation", "")
+            item["recommendation"] = _sanitize(text)
+            changed = changed or item["recommendation"] != text
+            sanitized_items.append(item)
+        final_recommendation["recommendations"] = sanitized_items
+
+        if changed:
             modifications.append("removed_diagnosis_language")
 
         if risk_result["risk_level"] == "High":
