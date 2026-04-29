@@ -1,0 +1,177 @@
+{
+  "_about": "Conservative timing rules from standard patient-leaflet guidance. Matching is by whole-word token in the medicine's written or generic name. Not clinically validated - review before production use. '@name' refers to a group.",
+  "groups": {
+    "calcium": ["calcium"],
+    "iron": ["iron", "ferrous", "ferric"],
+    "antacid": ["antacid", "antacids", "aluminium hydroxide", "aluminum hydroxide", "magnesium hydroxide", "magnesium trisilicate"],
+    "ppi": ["omeprazole", "esomeprazole", "pantoprazole", "lansoprazole", "rabeprazole"],
+    "nsaid": ["ibuprofen", "naproxen", "diclofenac", "aspirin"],
+    "levothyroxine": ["levothyroxine", "thyroxine"],
+    "quinolone_2h": ["levofloxacin", "moxifloxacin", "ofloxacin"]
+  },
+  "medicines": [
+    {
+      "match": "@levothyroxine",
+      "meal_relation": "before_meal",
+      "time_of_day": "morning",
+      "reason": "Absorbed best on an empty stomach, 30-60 minutes before breakfast."
+    },
+    {
+      "match": "@ppi",
+      "meal_relation": "before_meal",
+      "time_of_day": "morning",
+      "reason": "Works best taken 30-60 minutes before a meal, usually breakfast."
+    },
+    {
+      "match": "@nsaid",
+      "meal_relation": "with_food",
+      "time_of_day": "any",
+      "reason": "Taking it with food reduces stomach irritation."
+    },
+    {
+      "match": "metformin",
+      "meal_relation": "with_food",
+      "time_of_day": "any",
+      "reason": "Taking it with meals reduces stomach upset."
+    },
+    {
+      "match": "simvastatin",
+      "meal_relation": "any",
+      "time_of_day": "evening",
+      "reason": "Usually taken in the evening, when the body makes most cholesterol."
+    },
+    {
+      "match": "tetracycline",
+      "meal_relation": "empty_stomach",
+      "time_of_day": "any",
+      "reason": "Food, especially dairy, reduces how much is absorbed."
+    },
+    {
+      "match": "prednisolone",
+      "meal_relation": "with_food",
+      "time_of_day": "morning",
+      "reason": "Taken with breakfast to reduce stomach upset and sleep problems."
+    }
+  ],
+  "separations": [
+    {
+      "a": "@levothyroxine",
+      "b": "@calcium",
+      "a_first_minutes": 240,
+      "b_first_minutes": 240,
+      "reason": "Calcium binds levothyroxine and reduces absorption; keep them 4 hours apart."
+    },
+    {
+      "a": "@levothyroxine",
+      "b": "@iron",
+      "a_first_minutes": 240,
+      "b_first_minutes": 240,
+      "reason": "Iron binds levothyroxine and reduces absorption; keep them 4 hours apart."
+    },
+    {
+      "a": "@levothyroxine",
+      "b": "@antacid",
+      "a_first_minutes": 240,
+      "b_first_minutes": 240,
+      "reason": "Antacids reduce levothyroxine absorption; keep them 4 hours apart."
+    },
+    {
+      "a": "ciprofloxacin",
+      "b": "@calcium",
+      "a_first_minutes": 120,
+      "b_first_minutes": 360,
+      "reason": "Take ciprofloxacin at least 2 hours before or 6 hours after calcium."
+    },
+    {
+      "a": "ciprofloxacin",
+      "b": "@iron",
+      "a_first_minutes": 120,
+      "b_first_minutes": 360,
+      "reason": "Take ciprofloxacin at least 2 hours before or 6 hours after iron."
+    },
+    {
+      "a": "ciprofloxacin",
+      "b": "@antacid",
+      "a_first_minutes": 120,
+      "b_first_minutes": 360,
+      "reason": "Take ciprofloxacin at least 2 hours before or 6 hours after antacids."
+    },
+    {
+      "a": "@quinolone_2h",
+      "b": "@calcium",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Calcium reduces absorption of this antibiotic; keep them 2 hours apart."
+    },
+    {
+      "a": "@quinolone_2h",
+      "b": "@iron",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Iron reduces absorption of this antibiotic; keep them 2 hours apart."
+    },
+    {
+      "a": "@quinolone_2h",
+      "b": "@antacid",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Antacids reduce absorption of this antibiotic; keep them 2 hours apart."
+    },
+    {
+      "a": "tetracycline",
+      "b": "@calcium",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Calcium binds tetracycline and reduces absorption; keep them 2 hours apart."
+    },
+    {
+      "a": "tetracycline",
+      "b": "@iron",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Iron binds tetracycline and reduces absorption; keep them 2 hours apart."
+    },
+    {
+      "a": "tetracycline",
+      "b": "@antacid",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Antacids reduce tetracycline absorption; keep them 2 hours apart."
+    },
+    {
+      "a": "doxycycline",
+      "b": "@calcium",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Calcium reduces doxycycline absorption; keep them 2 hours apart."
+    },
+    {
+      "a": "doxycycline",
+      "b": "@iron",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Iron reduces doxycycline absorption; keep them 2 hours apart."
+    },
+    {
+      "a": "doxycycline",
+      "b": "@antacid",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Antacids reduce doxycycline absorption; keep them 2 hours apart."
+    },
+    {
+      "a": "@iron",
+      "b": "@calcium",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Calcium reduces iron absorption; keep them 2 hours apart."
+    },
+    {
+      "a": "@iron",
+      "b": "@antacid",
+      "a_first_minutes": 120,
+      "b_first_minutes": 120,
+      "reason": "Antacids reduce iron absorption; keep them 2 hours apart."
+    }
+  ]
+}

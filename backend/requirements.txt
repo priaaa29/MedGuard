@@ -1,0 +1,12 @@
+anthropic==2.10.0
+fastapi==0.163.2
+uvicorn[standard]==0.54.0
+pydantic==2.14.3
+pandas==3.1.1
+rapidfuzz==3.14.6
+python-multipart==0.0.34
+python-dotenv==1.2.1
+
+# dev / test
+pytest==9.2.0
+httpx==0.28.1
