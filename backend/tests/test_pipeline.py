@@ -1,16 +1,11 @@
-from fastapi.testclient import TestClient
-
 from app.llm.client import LLMError
-from app.main import app, get_llm
 from app.pipeline import INVALID_ROUTINE_SUMMARY, analyze
 from app.schemas import (
     AIInteraction,
     AnalyzeRequest,
     DraftDose,
-    ExtractedMedication,
     InteractionReview,
     Medication,
-    PrescriptionExtraction,
     RoutineDraft,
 )
 from tests.conftest import FakeLLM
@@ -136,87 +131,3 @@ def test_only_as_needed_skips_routine_call(schedule):
     req = AnalyzeRequest(medications=[Medication(name="Paracetamol", as_needed=True)], schedule=schedule)
     result = analyze(llm, req)
     assert result.routine.valid and result.routine.doses == [] and result.routine.attempts == 0
-
-
-# --------------------------------------------------------------------------- #
-# API
-# --------------------------------------------------------------------------- #
-def client_with(llm):
-    app.dependency_overrides[get_llm] = lambda: llm
-    return TestClient(app)
-
-
-def teardown_function():
-    app.dependency_overrides.clear()
-
-
-EXTRACTION = PrescriptionExtraction(
-    is_prescription=True,
-    medications=[
-        ExtractedMedication(
-            name="Tab Glucophage 500", generic_name="Metformin", strength="500 mg", dose="1 tab",
-            doses_per_day=2, as_needed=False, meal_relation="with_food", instructions="1-0-1 PC",
-            duration="30 days", uncertain_fields=[],
-        )
-    ],
-    warnings=[],
-)
-
-
-def test_extract_text():
-    llm = FakeLLM({PrescriptionExtraction: [EXTRACTION]})
-    response = client_with(llm).post("/api/prescriptions/extract", data={"text": "Glucophage 500 1-0-1 PC"})
-    assert response.status_code == 200
-    assert response.json()["medications"][0]["generic_name"] == "Metformin"
-    assert "<prescription>" in llm.calls[0]["content"][0]["text"]
-
-
-def test_extract_image_sniffs_type():
-    llm = FakeLLM({PrescriptionExtraction: [EXTRACTION]})
-    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
-    response = client_with(llm).post(
-        "/api/prescriptions/extract", files={"file": ("rx.txt", png, "text/plain")}
-    )
-    assert response.status_code == 200
-    assert llm.calls[0]["content"][0]["source"]["media_type"] == "image/png"
-
-
-def test_extract_rejects_bad_input():
-    client = client_with(FakeLLM())
-    assert client.post("/api/prescriptions/extract", data={}).status_code == 422
-    bad = client.post("/api/prescriptions/extract", files={"file": ("a.exe", b"MZ\x90\x00", "image/png")})
-    assert bad.status_code == 415
-
-
-def test_extract_llm_error_is_502():
-    llm = FakeLLM({PrescriptionExtraction: [LLMError("The AI service is busy.")]})
-    response = client_with(llm).post("/api/prescriptions/extract", data={"text": "x"})
-    assert response.status_code == 502 and response.json()["detail"] == "The AI service is busy."
-
-
-def test_analyze_endpoint(schedule):
-    llm = FakeLLM({InteractionReview: [EMPTY_REVIEW], RoutineDraft: [good_draft()]})
-    body = {
-        "medications": [m.model_dump() for m in request(schedule).medications],
-        "schedule": {"wake": "07:00", "breakfast": "08:00", "lunch": "13:00", "dinner": "20:00", "sleep": "23:00"},
-    }
-    response = client_with(llm).post("/api/analyze", json=body)
-    assert response.status_code == 200, response.text
-    data = response.json()
-    assert data["routine"]["valid"] is True
-    assert data["routine"]["doses"][0] == {
-        "medicine": "Levothyroxine", "time": "07:15", "dose": "1 tablet",
-        "note": "30-60 min before breakfast, with water",
-    }
-
-
-def test_analyze_validates_schedule_and_frequency():
-    client = client_with(FakeLLM())
-    body = {
-        "medications": [{"name": "Metformin"}],
-        "schedule": {"wake": "07:00", "breakfast": "08:00", "lunch": "13:00", "dinner": "20:00", "sleep": "23:00"},
-    }
-    assert client.post("/api/analyze", json=body).status_code == 422  # missing doses_per_day
-    body["medications"] = [{"name": "Metformin", "doses_per_day": 2}]
-    body["schedule"]["sleep"] = "01:00"
-    assert client.post("/api/analyze", json=body).status_code == 422  # overnight

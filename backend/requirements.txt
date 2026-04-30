@@ -6,6 +6,10 @@ pandas==3.1.1
 rapidfuzz==3.14.6
 python-multipart==0.0.34
 python-dotenv==1.2.1
+SQLAlchemy==2.1.9
+argon2-cffi==25.1.0
+email-validator==2.4.0
+# psycopg[binary] for Postgres in production (added in the deploy phase)
 
 # dev / test
 pytest==9.2.0

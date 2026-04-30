@@ -33,3 +33,38 @@ def schedule():
         dinner=time(20, 0),
         sleep=time(23, 0),
     )
+
+
+@pytest.fixture
+def make_client(tmp_path):
+    """Factory for TestClients backed by a fresh SQLite file and a fake LLM."""
+    from fastapi.testclient import TestClient
+    from sqlalchemy.orm import sessionmaker
+
+    from app.api.deps import get_llm
+    from app.db import get_db, init_db, make_engine
+    from app.main import app
+    from app.ratelimit import limiter
+
+    engine = make_engine(f"sqlite:///{tmp_path / 'test.db'}")
+    init_db(engine)
+    session_factory = sessionmaker(bind=engine, expire_on_commit=False)
+
+    def override_db():
+        with session_factory() as session:
+            yield session
+
+    limiter.reset()
+    state = {"llm": FakeLLM()}
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_llm] = lambda: state["llm"]
+
+    def factory(llm=None):
+        if llm is not None:
+            state["llm"] = llm
+        return TestClient(app)
+
+    factory.session = session_factory
+    yield factory
+    app.dependency_overrides.clear()
+    engine.dispose()

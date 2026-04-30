@@ -5,3 +5,4 @@ memory/*.db
 logs/
 .env
 .venv/
+backend/*.db

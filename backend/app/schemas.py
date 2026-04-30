@@ -4,17 +4,25 @@ Models named *Draft / *Review / Extracted* are what Claude returns (used as
 structured-output schemas). Everything else is validated application data.
 """
 
-from datetime import time
-from typing import Literal
+from datetime import UTC, datetime, time
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_serializer, field_validator, model_validator
 
-from app.config import MAX_MEDICATIONS
+from app.config import MAX_MEDICATIONS, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH
 
 MealRelation = Literal["with_food", "before_meal", "empty_stomach", "before_bedtime", "any"]
 TimeOfDay = Literal["morning", "evening", "any"]
 Severity = Literal["High", "Medium", "Low"]
 Source = Literal["dataset", "curated_rule", "ai"]
+
+
+def _as_utc(value: datetime) -> datetime:
+    # The database stores naive UTC; make that explicit so clients don't read it as local time.
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value
+
+
+UTCDateTime = Annotated[datetime, AfterValidator(_as_utc)]
 
 MEAL_RELATION_HELP = (
     "with_food = with or just after a meal; before_meal = 30-60 minutes before a meal; "
@@ -237,3 +245,66 @@ class AnalysisResult(BaseModel):
     warnings: list[str]
     safety_modifications: list[str]
     disclaimer: str
+
+
+# --------------------------------------------------------------------------- #
+# Accounts
+# --------------------------------------------------------------------------- #
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+
+    @field_validator("email")
+    @classmethod
+    def lower_email(cls, value: str) -> str:
+        return value.lower()
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
+
+    @field_validator("email")
+    @classmethod
+    def lower_email(cls, value: str) -> str:
+        return value.lower()
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
+
+
+class UserOut(BaseModel):
+    id: str
+    email: str
+    created_at: UTCDateTime
+
+
+# --------------------------------------------------------------------------- #
+# Saved routines
+# --------------------------------------------------------------------------- #
+class CreateRoutineRequest(AnalyzeRequest):
+    title: str | None = Field(default=None, max_length=100)
+
+
+class RenameRoutineRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+
+
+class RoutineSummary(BaseModel):
+    id: str
+    title: str
+    medicines: list[str]
+    valid: bool
+    dose_count: int
+    created_at: UTCDateTime
+    updated_at: UTCDateTime
+
+
+class RoutineDetail(BaseModel):
+    id: str
+    title: str
+    schedule: DailySchedule
+    result: AnalysisResult
+    created_at: UTCDateTime
+    updated_at: UTCDateTime
