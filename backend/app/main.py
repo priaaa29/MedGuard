@@ -1,82 +1,57 @@
 import logging
-from functools import lru_cache
+from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.concurrency import run_in_threadpool
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from app.config import CORS_ORIGINS, MAX_PRESCRIPTION_TEXT_CHARS, MAX_UPLOAD_BYTES
-from app.llm.client import ClaudeLLM, LLMError, StructuredLLM
-from app.llm.extract import extract_from_file, extract_from_text
-from app.pipeline import analyze
-from app.schemas import AnalysisResult, AnalyzeRequest, PrescriptionExtraction
+from app.api import accounts, prescriptions, routines
+from app.config import CORS_ORIGINS
+from app.db import init_db
 
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="MedGuard API", version="0.2.0")
+UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # create_all is fine while the schema is new; switch to Alembic before the
+    # first change to an existing production table.
+    init_db()
+    yield
+
+
+app = FastAPI(title="MedGuard API", version="0.3.0", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def reject_cross_site_writes(request: Request, call_next):
+    """CSRF defence on top of SameSite=Lax cookies.
+
+    Browsers send Origin on every cross-site request and on same-origin writes,
+    so a write whose Origin isn't ours came from another site. Requests without
+    Origin (curl, tests, server-side calls) carry no browser cookies to abuse.
+    """
+    origin = request.headers.get("origin")
+    if request.method in UNSAFE_METHODS and origin and origin not in CORS_ORIGINS:
+        return JSONResponse({"detail": "Cross-site request blocked."}, status_code=403)
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
-
-@lru_cache(maxsize=1)
-def get_llm() -> StructuredLLM:
-    return ClaudeLLM()
-
-
-def sniff_media_type(data: bytes) -> str | None:
-    """Identify the file from its bytes; never trust the client's Content-Type."""
-    if data.startswith(b"%PDF-"):
-        return "application/pdf"
-    if data.startswith(b"\x89PNG\r\n\x1a\n"):
-        return "image/png"
-    if data.startswith(b"\xff\xd8\xff"):
-        return "image/jpeg"
-    if data[:6] in (b"GIF87a", b"GIF89a"):
-        return "image/gif"
-    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
-        return "image/webp"
-    return None
+app.include_router(accounts.router)
+app.include_router(prescriptions.router)
+app.include_router(routines.router)
 
 
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
-
-
-@app.post("/api/prescriptions/extract", response_model=PrescriptionExtraction)
-async def extract_prescription(
-    file: UploadFile | None = File(default=None),
-    text: str | None = Form(default=None),
-    llm: StructuredLLM = Depends(get_llm),
-):
-    text = (text or "").strip()
-    if (file is None) == (not text):
-        raise HTTPException(422, "Send either a prescription file or prescription text, not both.")
-
-    try:
-        if file is not None:
-            data = await file.read(MAX_UPLOAD_BYTES + 1)
-            if len(data) > MAX_UPLOAD_BYTES:
-                raise HTTPException(413, "File is too large (max 10 MB).")
-            media_type = sniff_media_type(data)
-            if media_type is None:
-                raise HTTPException(415, "Upload a JPEG, PNG, WebP, GIF or PDF file.")
-            return await run_in_threadpool(extract_from_file, llm, data, media_type)
-
-        if len(text) > MAX_PRESCRIPTION_TEXT_CHARS:
-            raise HTTPException(413, f"Text is too long (max {MAX_PRESCRIPTION_TEXT_CHARS} characters).")
-        return await run_in_threadpool(extract_from_text, llm, text)
-    except LLMError as exc:
-        raise HTTPException(502, str(exc)) from exc
-
-
-@app.post("/api/analyze", response_model=AnalysisResult)
-def analyze_medications(request: AnalyzeRequest, llm: StructuredLLM = Depends(get_llm)):
-    # Plain def: FastAPI runs it in a worker thread, so the blocking SDK calls are fine.
-    # analyze() degrades gracefully on LLM errors, so it doesn't raise LLMError.
-    return analyze(llm, request)
