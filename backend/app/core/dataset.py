@@ -92,8 +92,14 @@ def food_interactions(medication: Medication) -> list[InteractionFinding]:
         return []
 
     frame = load_dataset()
-    rows = frame[frame["Medicine"] == match.medicine]
     order = {"High": 0, "Medium": 1, "Low": 2}
+    rows = frame[frame["Medicine"] == match.medicine]
+    # The CSV has a few repeated medicine + food pairs; keep the most severe row of each.
+    rows = (
+        rows.assign(_rank=rows["Severity"].map(order))
+        .sort_values("_rank", kind="stable")
+        .drop_duplicates(subset=["Food"], keep="first")
+    )
     findings = [
         InteractionFinding(
             medicine=medication.name,

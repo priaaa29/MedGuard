@@ -29,6 +29,13 @@ def test_generic_name_used_for_brand():
     assert findings and all(f.medicine == "Glucophage" and f.source == "dataset" for f in findings)
 
 
+def test_duplicate_dataset_pairs_are_collapsed():
+    # The CSV lists Metformin + Alcohol twice.
+    findings = dataset.food_interactions(Medication(name="Metformin", doses_per_day=2))
+    foods = [f.interacts_with for f in findings]
+    assert len(foods) == len(set(foods)) and "Alcohol" in foods
+
+
 def test_dataset_validates():
     frame = dataset.load_dataset()
     assert set(frame["Severity"]) <= {"High", "Medium", "Low"}
