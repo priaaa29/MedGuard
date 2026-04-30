@@ -6,3 +6,4 @@ logs/
 .env
 .venv/
 backend/*.db
+.brand-preview/
