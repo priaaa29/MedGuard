@@ -1,6 +1,6 @@
-"""Data models shared by the API, the Claude calls and the scheduler.
+"""Data models shared by the API, the AI calls and the scheduler.
 
-Models named *Draft / *Review / Extracted* are what Claude returns (used as
+Models named *Draft / *Review / Extracted* are what the AI returns (used as
 structured-output schemas). Everything else is validated application data.
 """
 
@@ -32,7 +32,7 @@ MEAL_RELATION_HELP = (
 
 
 # --------------------------------------------------------------------------- #
-# Prescription extraction (Claude output)
+# Prescription extraction (AI output)
 # --------------------------------------------------------------------------- #
 class ExtractedMedication(BaseModel):
     name: str = Field(description="Medicine name exactly as written on the prescription.")
@@ -125,7 +125,7 @@ class AnalyzeRequest(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
-# Interaction review (Claude output)
+# Interaction review (AI output)
 # --------------------------------------------------------------------------- #
 class AIInteraction(BaseModel):
     medicine: str = Field(description="One of the given medicine names, exactly as given.")

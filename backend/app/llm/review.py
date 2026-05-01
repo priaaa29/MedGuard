@@ -1,4 +1,4 @@
-"""Step 2: ask Claude what the curated data doesn't cover.
+"""Step 2: ask the AI what the curated data doesn't cover.
 
 The dataset and curated rules are passed in, so the model only adds what is
 missing. Everything it returns is labelled source="ai" downstream.

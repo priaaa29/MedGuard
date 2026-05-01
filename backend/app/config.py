@@ -10,6 +10,16 @@ DATA_DIR = BACKEND_DIR / "data"
 INTERACTIONS_CSV = DATA_DIR / "drug_food_interactions.csv"
 TIMING_RULES_JSON = DATA_DIR / "timing_rules.json"
 
+# Which AI service reads prescriptions and reviews interactions: "gemini" (free tier
+# available) or "anthropic" (Claude, paid).
+LLM_PROVIDER = os.getenv("MEDGUARD_LLM_PROVIDER", "gemini").lower()
+if LLM_PROVIDER not in {"gemini", "anthropic"}:
+    raise RuntimeError("MEDGUARD_LLM_PROVIDER must be 'gemini' or 'anthropic'.")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or None
+# Flash-Lite: Google's recommended low-cost model, with the largest free daily quota.
+GEMINI_MODEL = os.getenv("MEDGUARD_GEMINI_MODEL", "gemini-3.5-flash-lite")
+
 CLAUDE_MODEL = os.getenv("MEDGUARD_MODEL", "claude-opus-5-5")
 CLAUDE_EFFORT = os.getenv("MEDGUARD_EFFORT", "high")
 
@@ -57,7 +67,7 @@ COOKIE_SECURE = os.getenv("MEDGUARD_COOKIE_SECURE", "true" if IS_PRODUCTION else
 PASSWORD_MIN_LENGTH = 10
 PASSWORD_MAX_LENGTH = 128
 
-# Per-user caps on Claude calls (protects the API bill) and login throttling.
+# Per-user caps on AI calls (protects the API bill) and login throttling.
 EXTRACTIONS_PER_HOUR = int(os.getenv("MEDGUARD_EXTRACTIONS_PER_HOUR", "20"))
 ROUTINES_PER_HOUR = int(os.getenv("MEDGUARD_ROUTINES_PER_HOUR", "20"))
 LOGIN_ATTEMPTS_PER_15_MIN = 10

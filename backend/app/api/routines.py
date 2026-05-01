@@ -1,6 +1,6 @@
 """Saved routines.
 
-Building a routine makes up to three Claude calls and can take over a minute,
+Building a routine can make several AI calls and take over a minute,
 longer than proxies like Vercel will hold a request open. So creation is a
 background job: POST returns 202 with status "pending", the client polls
 GET /api/routines/{id} until it's "ready" or "failed".
@@ -52,7 +52,7 @@ def build_routine(routine_id: str, llm: StructuredLLM, session_factory: sessionm
             schedule=DailySchedule.model_validate(row.schedule),
         )
 
-    # The Claude calls happen with no database session held open.
+    # The AI calls happen with no database session held open.
     status, error, result = "failed", GENERIC_FAILURE, None
     try:
         analysis = analyze(llm, request)

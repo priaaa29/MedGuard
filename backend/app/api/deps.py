@@ -4,7 +4,7 @@ from fastapi import Cookie, Depends, HTTPException, Request
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import user_for_token
-from app.config import SESSION_COOKIE
+from app.config import LLM_PROVIDER, SESSION_COOKIE
 from app.db import SessionLocal, get_db
 from app.llm.client import ClaudeLLM, StructuredLLM
 from app.models import User
@@ -13,7 +13,11 @@ from app.ratelimit import limiter
 
 @lru_cache(maxsize=1)
 def get_llm() -> StructuredLLM:
-    return ClaudeLLM()
+    if LLM_PROVIDER == "anthropic":
+        return ClaudeLLM()
+    from app.llm.gemini import GeminiLLM
+
+    return GeminiLLM()
 
 
 def get_session_factory() -> sessionmaker:

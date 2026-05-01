@@ -1,9 +1,9 @@
-"""Turn medicines + rules + Claude's review into one constraint set.
+"""Turn medicines + rules + the AI review into one constraint set.
 
 Precedence for how a medicine relates to meals:
   1. what the prescription says (user-confirmed),
   2. curated rules (backend/data/timing_rules.json),
-  3. Claude's suggestion (labelled "ai"),
+  3. the AI's suggestion (labelled "ai"),
   4. no requirement.
 """
 
@@ -22,7 +22,7 @@ MAX_AI_SEPARATION_MINUTES = 480
 
 
 def name_resolver(medications: list[Medication]):
-    """Map a name Claude returned back to the user's medicine name."""
+    """Map a name the AI returned back to the user's medicine name."""
     lookup = {}
     for med in medications:
         lookup[med.name.lower()] = med.name

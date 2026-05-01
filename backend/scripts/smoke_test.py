@@ -1,4 +1,4 @@
-"""Live end-to-end check against the real Claude API (costs a few cents).
+"""Live end-to-end check against the configured AI provider (Gemini by default).
 
     cd backend && .venv/bin/python -m scripts.smoke_test
 """
@@ -6,7 +6,7 @@
 import json
 from datetime import time
 
-from app.llm.client import ClaudeLLM
+from app.api.deps import get_llm
 from app.llm.extract import extract_from_text
 from app.pipeline import analyze
 from app.schemas import AnalyzeRequest, DailySchedule, Medication
@@ -21,7 +21,7 @@ PRESCRIPTION = """Rx
 
 
 def main():
-    llm = ClaudeLLM()
+    llm = get_llm()
 
     print("== extract ==")
     extraction = extract_from_text(llm, PRESCRIPTION)
