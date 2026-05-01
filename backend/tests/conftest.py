@@ -41,7 +41,7 @@ def make_client(tmp_path):
     from fastapi.testclient import TestClient
     from sqlalchemy.orm import sessionmaker
 
-    from app.api.deps import get_llm
+    from app.api.deps import get_llm, get_session_factory
     from app.db import get_db, init_db, make_engine
     from app.main import app
     from app.ratelimit import limiter
@@ -58,6 +58,8 @@ def make_client(tmp_path):
     state = {"llm": FakeLLM()}
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_llm] = lambda: state["llm"]
+    # Background jobs open their own sessions; point them at the test database too.
+    app.dependency_overrides[get_session_factory] = lambda: session_factory
 
     def factory(llm=None):
         if llm is not None:

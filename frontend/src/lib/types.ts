@@ -96,11 +96,15 @@ export type AnalysisResult = {
   disclaimer: string;
 };
 
+export type RoutineStatus = "pending" | "ready" | "failed";
+
 export type RoutineSummary = {
   id: string;
   title: string;
+  status: RoutineStatus;
   medicines: string[];
-  valid: boolean;
+  /** Null until the routine is ready. */
+  valid: boolean | null;
   dose_count: number;
   created_at: string;
   updated_at: string;
@@ -109,8 +113,13 @@ export type RoutineSummary = {
 export type RoutineDetail = {
   id: string;
   title: string;
+  status: RoutineStatus;
+  /** User-safe reason when status is "failed". */
+  error: string | null;
+  medications: Medication[];
   schedule: DailySchedule;
-  result: AnalysisResult;
+  /** Null until the routine is ready. */
+  result: AnalysisResult | null;
   created_at: string;
   updated_at: string;
 };

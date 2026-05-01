@@ -128,7 +128,7 @@ def test_rate_limiter_window():
 def test_delete_account_removes_everything(make_client):
     client = make_client(routine_llm())
     signup(client)
-    assert create_routine(client).status_code == 201
+    assert create_routine(client).status_code == 202
 
     assert client.request("DELETE", "/api/auth/me", json={"password": "nope"}).status_code == 401
     assert client.request("DELETE", "/api/auth/me", json={"password": PASSWORD}).status_code == 204
@@ -199,18 +199,25 @@ def test_routine_lifecycle(make_client):
     signup(client)
 
     created = create_routine(client)
-    assert created.status_code == 201, created.text
+    assert created.status_code == 202, created.text
     data = created.json()
+    # The response comes back before the routine is built...
+    assert data["status"] == "pending" and data["result"] is None
     assert data["title"] == "Metformin, Paracetamol"
     assert data["schedule"] == SCHEDULE
-    assert data["result"]["routine"]["valid"] is True
-    assert data["result"]["routine"]["doses"][0]["dose"] == "1 tablet (500 mg)"
+    assert [m["name"] for m in data["medications"]] == ["Metformin", "Paracetamol"]
+
+    # ...and the background job has finished by the next request (TestClient runs it inline).
+    detail = client.get(f"/api/routines/{data['id']}").json()
+    assert detail["status"] == "ready" and detail["error"] is None
+    assert detail["result"]["routine"]["valid"] is True
+    assert detail["result"]["routine"]["doses"][0]["dose"] == "1 tablet (500 mg)"
 
     [summary] = client.get("/api/routines").json()
-    assert summary["id"] == data["id"] and summary["dose_count"] == 2
+    assert summary["id"] == data["id"] and summary["status"] == "ready"
+    assert summary["dose_count"] == 2 and summary["valid"] is True
     assert summary["medicines"] == ["Metformin", "Paracetamol"]
 
-    assert client.get(f"/api/routines/{data['id']}").json()["result"] == data["result"]
     renamed = client.patch(f"/api/routines/{data['id']}", json={"title": "Mum's tablets"})
     assert renamed.json()["title"] == "Mum's tablets"
     assert client.delete(f"/api/routines/{data['id']}").status_code == 204
@@ -237,13 +244,56 @@ def test_routines_require_login(make_client):
     assert create_routine(client).status_code == 401
 
 
-def test_routine_not_saved_when_ai_unavailable(make_client):
+def test_routine_fails_cleanly_when_ai_unavailable_then_retries(make_client):
     llm = FakeLLM({InteractionReview: [LLMError("busy")], RoutineDraft: [LLMError("The AI service is busy.")]})
     client = make_client(llm)
     signup(client)
-    response = create_routine(client)
-    assert response.status_code == 502
-    assert client.get("/api/routines").json() == []
+    routine_id = create_routine(client).json()["id"]
+
+    failed = client.get(f"/api/routines/{routine_id}").json()
+    assert failed["status"] == "failed" and failed["error"] == "The AI service is busy."
+    assert failed["result"] is None
+    [summary] = client.get("/api/routines").json()
+    assert summary["status"] == "failed" and summary["valid"] is None and summary["dose_count"] == 0
+
+    # Retry once Claude is back.
+    llm.responses = {InteractionReview: [EMPTY_REVIEW], RoutineDraft: [GOOD_DRAFT]}
+    retried = client.post(f"/api/routines/{routine_id}/retry")
+    assert retried.status_code == 202 and retried.json()["status"] == "pending"
+    assert client.get(f"/api/routines/{routine_id}").json()["status"] == "ready"
+    # Only failed routines can be retried.
+    assert client.post(f"/api/routines/{routine_id}/retry").status_code == 409
+
+
+def test_unexpected_job_error_marks_routine_failed(make_client):
+    llm = FakeLLM({InteractionReview: [EMPTY_REVIEW], RoutineDraft: [RuntimeError("boom")]})
+    client = make_client(llm)
+    signup(client)
+    routine_id = create_routine(client).json()["id"]
+    detail = client.get(f"/api/routines/{routine_id}").json()
+    assert detail["status"] == "failed"
+    assert "boom" not in detail["error"]  # internals never reach the user
+
+
+def test_stale_pending_routine_is_marked_failed(make_client):
+    from datetime import timedelta
+
+    from app.db import utcnow
+
+    client = make_client(routine_llm())
+    signup(client)
+    with make_client.session() as db:
+        user = db.scalar(select(User))
+        row = SavedRoutine(
+            user_id=user.id, title="Lost", medications=MEDICATIONS, schedule=SCHEDULE, status="pending",
+            created_at=utcnow() - timedelta(hours=1), updated_at=utcnow() - timedelta(hours=1),
+        )
+        db.add(row)
+        db.commit()
+        routine_id = row.id
+
+    detail = client.get(f"/api/routines/{routine_id}").json()
+    assert detail["status"] == "failed" and "too long" in detail["error"]
 
 
 def test_routine_validation(make_client):
@@ -255,3 +305,61 @@ def test_routine_validation(make_client):
     assert client.post("/api/routines", json=body).status_code == 422  # overnight
     dupes = {"medications": [MEDICATIONS[0], {**MEDICATIONS[0], "name": "metformin"}], "schedule": SCHEDULE}
     assert client.post("/api/routines", json=dupes).status_code == 422
+
+
+# --------------------------------------------------------------------------- #
+# Hardening
+# --------------------------------------------------------------------------- #
+def test_api_responses_are_never_cached(make_client):
+    client = make_client()
+    signup(client)
+    response = client.get("/api/auth/me")
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_health_checks_database(make_client):
+    response = make_client().get("/api/health")
+    assert response.status_code == 200 and response.json() == {"status": "ok"}
+
+
+def test_unhandled_errors_return_generic_json(make_client, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.api import accounts
+    from app.main import app
+
+    def explode(*args, **kwargs):
+        raise RuntimeError("secret internals")
+
+    make_client()
+    monkeypatch.setattr(accounts, "user_for_token", explode, raising=False)
+    monkeypatch.setattr("app.api.deps.user_for_token", explode)
+    client = TestClient(app, raise_server_exceptions=False)
+    client.cookies.set(SESSION_COOKIE, "anything")
+    response = client.get("/api/auth/me")
+    assert response.status_code == 500
+    assert "secret" not in response.text and response.headers["cache-control"] == "no-store"
+
+
+def test_redis_rate_limiter():
+    import fakeredis
+
+    from app.ratelimit import RedisRateLimiter
+
+    limiter = RedisRateLimiter(fakeredis.FakeRedis())
+    assert all(limiter.hit("k", 3, 60) for _ in range(3))
+    assert not limiter.hit("k", 3, 60)
+    assert limiter.hit("other", 3, 60)
+    limiter.reset()
+    assert limiter.hit("k", 3, 60)
+
+
+def test_redis_outage_fails_open():
+    from app.ratelimit import RedisRateLimiter
+
+    class Down:
+        def pipeline(self):
+            raise ConnectionError("redis down")
+
+    assert RedisRateLimiter(Down()).hit("k", 1, 60)

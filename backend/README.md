@@ -7,12 +7,16 @@ medicine timetable that a deterministic checker verifies.
 
 ```bash
 cd backend
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cp .env.example .env            # add ANTHROPIC_API_KEY
+.venv/bin/alembic upgrade head  # create/upgrade the database (SQLite at backend/medguard.db by default)
 .venv/bin/uvicorn app.main:app --reload
 .venv/bin/python -m pytest      # no API key needed (Claude is faked)
 .venv/bin/python -m scripts.smoke_test   # live run against Claude (a few cents)
 ```
+
+`requirements.txt` holds production dependencies only; `requirements-dev.txt` adds the test
+tools. Production setup (Render, Postgres, Redis) is in [../DEPLOY.md](../DEPLOY.md).
 
 ## Endpoints
 
@@ -27,9 +31,10 @@ Every endpoint except health, register and login needs a logged-in session cooki
 | GET | `/api/auth/me` | | `UserOut` |
 | DELETE | `/api/auth/me` | `{password}` | 204, deletes the account and all its routines |
 | POST | `/api/prescriptions/extract` | multipart: `file` (JPEG/PNG/WebP/GIF/PDF, ≤10 MB) **or** `text` | `PrescriptionExtraction`, for the user to review and correct |
-| POST | `/api/routines` | `{medications, schedule, title?}` | `RoutineDetail`: runs the analysis and saves it |
+| POST | `/api/routines` | `{medications, schedule, title?}` | **202** `RoutineDetail` with `status: "pending"`; the routine is built in the background |
+| POST | `/api/routines/{id}/retry` | | **202**, re-runs a `failed` routine |
 | GET | `/api/routines` | | `[RoutineSummary]` |
-| GET | `/api/routines/{id}` | | `RoutineDetail` |
+| GET | `/api/routines/{id}` | | `RoutineDetail`; poll until `status` is `ready` or `failed` |
 | PATCH | `/api/routines/{id}` | `{title}` | `RoutineSummary` |
 | DELETE | `/api/routines/{id}` | | 204 |
 
@@ -48,7 +53,8 @@ Every endpoint except health, register and login needs a logged-in session cooki
   medicines, the schedule and the result.
 - Rate limits: login is limited per email and per IP. Claude calls are limited per user
   (20 extractions and 20 routines an hour by default). Each user can save up to 50 routines.
-  The limiter is in-memory, so it needs Redis once there's more than one instance.
+  Limits live in Redis when `REDIS_URL` is set (required in production) and in memory
+  otherwise. If Redis is unreachable, requests are allowed rather than blocked.
 
 ## How a routine is built
 
@@ -76,7 +82,8 @@ What Claude is allowed to do:
 
 - Only daily medicines are scheduled. Weekly ones are flagged during extraction for the user to handle.
 - Overnight schedules (sleep after midnight) are not supported yet.
-- Tables are created with `create_all`. Add Alembic before the first schema change in production.
+- Routine jobs run inside the API process (FastAPI background tasks). One still `pending` after
+  15 minutes is marked `failed` and can be retried. Use a queue if volume grows.
 - No email verification or password reset yet. Both need an email provider.
 - `timing_rules.json` is a small, conservative set taken from patient leaflets. It has not been
   clinically validated.

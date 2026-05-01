@@ -291,11 +291,16 @@ class RenameRoutineRequest(BaseModel):
     title: str = Field(min_length=1, max_length=100)
 
 
+RoutineStatus = Literal["pending", "ready", "failed"]
+
+
 class RoutineSummary(BaseModel):
     id: str
     title: str
+    status: RoutineStatus
     medicines: list[str]
-    valid: bool
+    # Null until the routine is ready.
+    valid: bool | None
     dose_count: int
     created_at: UTCDateTime
     updated_at: UTCDateTime
@@ -304,7 +309,11 @@ class RoutineSummary(BaseModel):
 class RoutineDetail(BaseModel):
     id: str
     title: str
+    status: RoutineStatus
+    # User-safe reason when status is "failed".
+    error: str | None
+    medications: list[Medication]
     schedule: DailySchedule
-    result: AnalysisResult
+    result: AnalysisResult | None
     created_at: UTCDateTime
     updated_at: UTCDateTime

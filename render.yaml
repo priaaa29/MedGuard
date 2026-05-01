@@ -1,0 +1,64 @@
+# Render Blueprint for the MedGuard API, Postgres and Redis (Key Value).
+# The web app is deployed separately on Vercel. See DEPLOY.md.
+#
+# Validate before use:  render blueprints validate render.yaml
+
+services:
+  - type: web
+    name: medguard-api
+    runtime: python
+    rootDir: backend
+    region: singapore
+    # Free instances sleep after ~15 min idle (first request then takes ~1 min) and
+    # can't run pre-deploy commands. Move to a paid plan (e.g. 0.5c-512mb) for real users.
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Migrations run on start because pre-deploy commands need a paid plan. Safe with one
+    # instance; with several, move `alembic upgrade head` to preDeployCommand.
+    startCommand: >-
+      alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT
+      --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /api/health
+    # Deploy only after GitHub Actions CI passes on main.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: MEDGUARD_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: medguard-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: medguard-redis
+          property: connectionString
+      # Secrets: Render asks for these when the Blueprint is first created.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # The web app's public origin, e.g. https://medguard.vercel.app (comma-separate several).
+      - key: MEDGUARD_CORS_ORIGINS
+        sync: false
+
+  - type: keyvalue
+    name: medguard-redis
+    region: singapore
+    plan: free
+    # Empty list = no connections from outside Render; the API connects over the private network.
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  - name: medguard-db
+    region: singapore
+    # Free Render Postgres is deleted after 30 days, which would lose users' routines.
+    # Smallest paid plan; includes daily backups.
+    plan: 0.1c-256mb
+    databaseName: medguard
+    user: medguard
+    postgresMajorVersion: "17"
+    # Empty list = no connections from outside Render.
+    ipAllowList: []

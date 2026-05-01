@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -22,13 +22,14 @@ type Props = {
   schedule: DailySchedule;
   title: string;
   submitError: string | null;
+  submitting: boolean;
   onChange: (schedule: DailySchedule) => void;
   onTitleChange: (title: string) => void;
   onBack: () => void;
   onSubmit: () => void;
 };
 
-export function ScheduleStep({ schedule, title, submitError, onChange, onTitleChange, onBack, onSubmit }: Props) {
+export function ScheduleStep({ schedule, title, submitError, submitting, onChange, onTitleChange, onBack, onSubmit }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -105,7 +106,8 @@ export function ScheduleStep({ schedule, title, submitError, onChange, onTitleCh
         <Button type="button" variant="ghost" onClick={onBack}>
           Back
         </Button>
-        <Button type="submit" size="lg">
+        <Button type="submit" size="lg" disabled={submitting} aria-busy={submitting}>
+          {submitting && <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden />}
           Build my routine
         </Button>
       </div>
