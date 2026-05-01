@@ -1,4 +1,4 @@
-"""Step 3: ask Claude for a daily timetable that satisfies the constraints.
+"""Step 3 (optional planner): ask the AI for a daily timetable that satisfies the constraints.
 
 The output is always checked by app.scheduling.validator; the prompt spells out
 the same windows the validator enforces so the two agree.

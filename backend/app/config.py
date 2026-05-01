@@ -23,6 +23,12 @@ GEMINI_MODEL = os.getenv("MEDGUARD_GEMINI_MODEL", "gemini-3.5-flash-lite")
 CLAUDE_MODEL = os.getenv("MEDGUARD_MODEL", "claude-opus-5-5")
 CLAUDE_EFFORT = os.getenv("MEDGUARD_EFFORT", "high")
 
+# How daily dose times are planned: "scheduler" (built-in, deterministic, no AI call)
+# or "llm" (the AI drafts a timetable, then the validator checks it).
+ROUTINE_PLANNER = os.getenv("MEDGUARD_ROUTINE_PLANNER", "scheduler").lower()
+if ROUTINE_PLANNER not in {"scheduler", "llm"}:
+    raise RuntimeError("MEDGUARD_ROUTINE_PLANNER must be 'scheduler' or 'llm'.")
+
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_PRESCRIPTION_TEXT_CHARS = 5000
 MAX_MEDICATIONS = 20

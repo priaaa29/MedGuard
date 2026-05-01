@@ -1,6 +1,6 @@
 """Deterministic routine checker.
 
-Claude proposes a timetable; this module decides whether it is acceptable.
+The planner (built-in or AI) proposes a timetable; this module decides whether it is acceptable.
 Every rule here is plain arithmetic on minutes-since-midnight so it can be
 unit-tested and audited without the model.
 

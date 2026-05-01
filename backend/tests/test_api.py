@@ -244,7 +244,8 @@ def test_routines_require_login(make_client):
     assert create_routine(client).status_code == 401
 
 
-def test_routine_fails_cleanly_when_ai_unavailable_then_retries(make_client):
+def test_routine_fails_cleanly_when_ai_unavailable_then_retries(make_client, monkeypatch):
+    monkeypatch.setattr("app.config.ROUTINE_PLANNER", "llm")  # timetable drafted by the AI
     llm = FakeLLM({InteractionReview: [LLMError("busy")], RoutineDraft: [LLMError("The AI service is busy.")]})
     client = make_client(llm)
     signup(client)
@@ -265,7 +266,8 @@ def test_routine_fails_cleanly_when_ai_unavailable_then_retries(make_client):
     assert client.post(f"/api/routines/{routine_id}/retry").status_code == 409
 
 
-def test_unexpected_job_error_marks_routine_failed(make_client):
+def test_unexpected_job_error_marks_routine_failed(make_client, monkeypatch):
+    monkeypatch.setattr("app.config.ROUTINE_PLANNER", "llm")
     llm = FakeLLM({InteractionReview: [EMPTY_REVIEW], RoutineDraft: [RuntimeError("boom")]})
     client = make_client(llm)
     signup(client)
@@ -273,6 +275,16 @@ def test_unexpected_job_error_marks_routine_failed(make_client):
     detail = client.get(f"/api/routines/{routine_id}").json()
     assert detail["status"] == "failed"
     assert "boom" not in detail["error"]  # internals never reach the user
+
+
+def test_scheduler_routine_ready_even_when_ai_is_down(make_client, monkeypatch):
+    monkeypatch.setattr("app.config.ROUTINE_PLANNER", "scheduler")
+    client = make_client(FakeLLM({InteractionReview: [LLMError("The AI service has reached its usage limit for now.")]}))
+    signup(client)
+    routine_id = create_routine(client).json()["id"]
+    detail = client.get(f"/api/routines/{routine_id}").json()
+    assert detail["status"] == "ready" and detail["result"]["routine"]["valid"] is True
+    assert any("unavailable" in w for w in detail["result"]["warnings"])
 
 
 def test_stale_pending_routine_is_marked_failed(make_client):

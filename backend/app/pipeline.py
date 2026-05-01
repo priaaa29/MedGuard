@@ -1,15 +1,16 @@
 """End-to-end analysis: interactions -> constraints -> routine -> safety checks.
 
   curated dataset + timing rules   (deterministic)
-        -> Claude interaction review (fills gaps, labelled "ai")
+        -> AI interaction review     (fills gaps, labelled "ai")
         -> constraint set            (deterministic merge, fixed precedence)
-        -> Claude routine draft      (proposal)
-        -> validator                 (deterministic accept/reject, one retry)
+        -> routine draft             (built-in scheduler, or the AI with one retry)
+        -> validator                 (deterministic accept/reject)
         -> safety scrub              (removes dose-change / stop / diagnosis text)
 """
 
 import logging
 
+from app import config
 from app.core import dataset
 from app.core.safety import DISCLAIMER, HIGH_RISK_WARNING, scrub
 from app.llm.client import LLMError, StructuredLLM
@@ -17,6 +18,7 @@ from app.llm.review import review_interactions
 from app.llm.routine import generate_routine
 from app.scheduling import rules
 from app.scheduling.constraints import build_constraints, name_resolver
+from app.scheduling.planner import plan_routine
 from app.scheduling.validator import to_minutes, validate_routine
 from app.schemas import (
     AnalysisResult,
@@ -35,6 +37,7 @@ from app.schemas import (
 logger = logging.getLogger(__name__)
 
 MAX_ROUTINE_ATTEMPTS = 2
+NO_SCHEDULE_MESSAGE = "No set of times meets every timing rule for these medicines together."
 FALLBACK_RECOMMENDATION = "Ask your doctor or pharmacist how to manage this."
 INVALID_ROUTINE_SUMMARY = (
     "MedGuard could not build a timetable that meets every timing rule for these medicines. "
@@ -98,6 +101,7 @@ def _build_routine(
     schedule: DailySchedule,
     findings: list[InteractionFinding],
     scrubber: _Scrubber,
+    planner: str,
 ) -> Routine:
     as_needed = [m.name for m in medications if m.as_needed]
     if not constraints.medications:
@@ -114,7 +118,17 @@ def _build_routine(
     draft: RoutineDraft | None = None
     issues: list[ValidationIssue] = []
     attempts = 0
-    for _ in range(MAX_ROUTINE_ATTEMPTS):
+    if planner == "scheduler":
+        # Built-in planner: no AI call. Its output is still validated below.
+        attempts = 1
+        draft = plan_routine(constraints, schedule, findings)
+        if draft is None:
+            issues = [ValidationIssue(code="no_schedule", message=NO_SCHEDULE_MESSAGE)]
+        else:
+            issues = validate_routine(draft.doses, constraints, schedule)
+            if issues:  # planner bug: never show times the validator rejects
+                logger.error("scheduler produced invalid routine: %s", [i.code for i in issues])
+    for _ in range(MAX_ROUTINE_ATTEMPTS if planner == "llm" else 0):
         attempts += 1
         try:
             draft = generate_routine(llm, constraints, schedule, findings, draft, issues)
@@ -170,7 +184,8 @@ def _build_routine(
     )
 
 
-def analyze(llm: StructuredLLM, request: AnalyzeRequest) -> AnalysisResult:
+def analyze(llm: StructuredLLM, request: AnalyzeRequest, planner: str | None = None) -> AnalysisResult:
+    planner = planner or config.ROUTINE_PLANNER  # read at call time so config changes apply
     medications, schedule = request.medications, request.schedule
     warnings: list[str] = []
     scrubber = _Scrubber()
@@ -186,7 +201,7 @@ def analyze(llm: StructuredLLM, request: AnalyzeRequest) -> AnalysisResult:
 
     findings = dataset_findings + _ai_findings(review, medications, dataset_findings, scrubber)
     constraints, as_needed_separations = build_constraints(medications, schedule, review)
-    routine = _build_routine(llm, medications, constraints, schedule, findings, scrubber)
+    routine = _build_routine(llm, medications, constraints, schedule, findings, scrubber, planner)
 
     for sep in as_needed_separations:
         warnings.append(f"If you take {sep.medicine_a} and {sep.medicine_b} on the same day: {sep.reason}")

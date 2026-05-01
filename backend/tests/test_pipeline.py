@@ -52,7 +52,7 @@ def bad_draft():
 
 def test_valid_first_try(schedule):
     llm = FakeLLM({InteractionReview: [EMPTY_REVIEW], RoutineDraft: [good_draft()]})
-    result = analyze(llm, request(schedule))
+    result = analyze(llm, request(schedule), planner="llm")
 
     routine = result.routine
     assert routine.valid and routine.attempts == 1 and routine.issues == []
@@ -70,7 +70,7 @@ def test_valid_first_try(schedule):
 
 def test_retry_after_rejection_includes_problems(schedule):
     llm = FakeLLM({InteractionReview: [EMPTY_REVIEW], RoutineDraft: [bad_draft(), good_draft()]})
-    result = analyze(llm, request(schedule))
+    result = analyze(llm, request(schedule), planner="llm")
 
     assert result.routine.valid and result.routine.attempts == 2
     retry_prompt = llm.calls[-1]["content"][0]["text"]
@@ -79,7 +79,7 @@ def test_retry_after_rejection_includes_problems(schedule):
 
 def test_invalid_after_retries_is_flagged(schedule):
     llm = FakeLLM({InteractionReview: [EMPTY_REVIEW], RoutineDraft: [bad_draft(), bad_draft()]})
-    routine = analyze(llm, request(schedule)).routine
+    routine = analyze(llm, request(schedule), planner="llm").routine
 
     assert not routine.valid and routine.attempts == 2
     assert routine.summary == INVALID_ROUTINE_SUMMARY
@@ -88,7 +88,7 @@ def test_invalid_after_retries_is_flagged(schedule):
 
 def test_review_failure_degrades_gracefully(schedule):
     llm = FakeLLM({InteractionReview: [LLMError("busy")], RoutineDraft: [good_draft()]})
-    result = analyze(llm, request(schedule))
+    result = analyze(llm, request(schedule), planner="llm")
     assert result.routine.valid
     assert any("AI interaction review unavailable" in w for w in result.warnings)
 
@@ -115,7 +115,7 @@ def test_ai_findings_are_labelled_deduped_and_scrubbed(schedule):
     )
     draft = good_draft(summary="Take as shown. Stop taking metformin if you feel sick.")
     llm = FakeLLM({InteractionReview: [review], RoutineDraft: [draft]})
-    result = analyze(llm, request(schedule))
+    result = analyze(llm, request(schedule), planner="llm")
 
     ai = [f for f in result.interactions if f.source == "ai"]
     assert [(f.medicine, f.interacts_with) for f in ai] == [("Levothyroxine", "Soy")]
@@ -131,3 +131,42 @@ def test_only_as_needed_skips_routine_call(schedule):
     req = AnalyzeRequest(medications=[Medication(name="Paracetamol", as_needed=True)], schedule=schedule)
     result = analyze(llm, req)
     assert result.routine.valid and result.routine.doses == [] and result.routine.attempts == 0
+
+
+
+# --------------------------------------------------------------------------- #
+# Built-in scheduler (default; no AI call for the timetable)
+# --------------------------------------------------------------------------- #
+def test_scheduler_builds_routine_without_ai_drafting(schedule):
+    llm = FakeLLM({InteractionReview: [EMPTY_REVIEW]})  # no RoutineDraft queued: must not be asked
+    result = analyze(llm, request(schedule), planner="scheduler")
+    routine = result.routine
+    assert routine.valid and routine.issues == [] and routine.attempts == 1
+    assert [(d.time, d.medicine) for d in routine.doses] == [
+        ("07:15", "Levothyroxine"),
+        ("08:00", "Metformin"),
+        ("20:00", "Metformin"),
+    ]
+    assert [c["output_model"] for c in llm.calls] == [InteractionReview]
+    assert routine.doses[1].dose == "1 tablet (500 mg)"
+    assert any("Metformin and Alcohol" in line for line in routine.food_guidance)
+
+
+def test_scheduler_works_when_ai_is_down(schedule):
+    llm = FakeLLM({InteractionReview: [LLMError("The AI service has reached its usage limit for now.")]})
+    result = analyze(llm, request(schedule), planner="scheduler")
+    assert result.routine.valid
+    assert any("AI interaction review unavailable" in w for w in result.warnings)
+
+
+def test_scheduler_reports_impossible_routines(schedule):
+    req = AnalyzeRequest(
+        medications=[
+            Medication(name="Levothyroxine", doses_per_day=1),
+            Medication(name="Calcium carbonate", doses_per_day=4, meal_relation="with_food"),
+        ],
+        schedule=schedule,
+    )
+    routine = analyze(FakeLLM({InteractionReview: [EMPTY_REVIEW]}), req, planner="scheduler").routine
+    assert not routine.valid and routine.doses == []
+    assert [i.code for i in routine.issues] == ["no_schedule"]
