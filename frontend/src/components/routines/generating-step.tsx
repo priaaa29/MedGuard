@@ -12,21 +12,24 @@ const STAGES = [
   { label: "Checking the timetable against timing rules", after: 30_000 },
 ];
 
-export function GeneratingStep() {
-  const [elapsed, setElapsed] = useState(0);
+/** `startedAt` (ISO) lets the stages pick up where they were after a reload. */
+export function GeneratingStep({ startedAt }: { startedAt: string }) {
+  const started = new Date(startedAt).getTime();
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const started = Date.now();
-    const timer = setInterval(() => setElapsed(Date.now() - started), 1000);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const elapsed = Math.max(0, now - started);
 
   const current = STAGES.findLastIndex((stage) => elapsed >= stage.after);
 
   return (
     <div className="rounded-xl border border-border bg-card px-6 py-12" role="status" aria-live="polite">
       <h2 className="text-center text-xl font-semibold">Building your routine</h2>
-      <p className="mt-1 text-center text-muted-foreground">This usually takes under a minute. Please keep this page open.</p>
+      <p className="mt-1 text-center text-muted-foreground">This usually takes under a minute. You can leave this page; it keeps going and is saved to My routines.</p>
       <ol className="mx-auto mt-8 max-w-sm space-y-4">
         {STAGES.map((stage, index) => {
           const done = index < current;

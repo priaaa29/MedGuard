@@ -50,8 +50,11 @@ class SavedRoutine(Base):
     # Confirmed inputs and the full result, as JSON (schemas.AnalyzeRequest / AnalysisResult).
     medications: Mapped[list] = mapped_column(JSON)
     schedule: Mapped[dict] = mapped_column(JSON)
-    result: Mapped[dict] = mapped_column(JSON)
-    valid: Mapped[bool] = mapped_column(Boolean)
+    # Built in the background: pending -> ready | failed.
+    status: Mapped[str] = mapped_column(String(16), default="pending", index=True)
+    error: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    valid: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 

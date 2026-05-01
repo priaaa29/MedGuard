@@ -95,6 +95,8 @@ export const api = {
 
   createRoutine: (medications: Medication[], schedule: DailySchedule, title?: string) =>
     request<RoutineDetail>("/api/routines", json("POST", { medications, schedule, title: title || undefined })),
+  retryRoutine: (id: string) =>
+    request<RoutineDetail>(`/api/routines/${encodeURIComponent(id)}/retry`, { method: "POST" }),
   listRoutines: () => request<RoutineSummary[]>("/api/routines"),
   getRoutine: (id: string) => request<RoutineDetail>(`/api/routines/${encodeURIComponent(id)}`),
   renameRoutine: (id: string, title: string) =>

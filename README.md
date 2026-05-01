@@ -7,6 +7,22 @@ This system is designed to surface those hidden risks in a simple and usable way
 
 ---
 
+## 🆕 New web app
+
+A full web app is being built alongside the original Streamlit demo. You upload or type a
+prescription, MedGuard checks food and drug interactions, and it builds a safe, well-spaced
+daily routine that you can save to your account.
+
+| Part | Where | Docs |
+|---|---|---|
+| API (FastAPI, Claude, Postgres) | `backend/` | [backend/README.md](backend/README.md) |
+| Web app (Next.js) | `frontend/` | [frontend/README.md](frontend/README.md) |
+| Deployment (Render + Vercel) | `render.yaml`, `.github/workflows/ci.yml` | [DEPLOY.md](DEPLOY.md) |
+
+The rest of this README describes the original Streamlit demo, which is still live.
+
+---
+
 ## 🚨 The Problem
 
 Medicine instructions often miss real-world context.

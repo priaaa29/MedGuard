@@ -1,11 +1,11 @@
 from functools import lru_cache
 
 from fastapi import Cookie, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.auth import user_for_token
 from app.config import SESSION_COOKIE
-from app.db import get_db
+from app.db import SessionLocal, get_db
 from app.llm.client import ClaudeLLM, StructuredLLM
 from app.models import User
 from app.ratelimit import limiter
@@ -14,6 +14,11 @@ from app.ratelimit import limiter
 @lru_cache(maxsize=1)
 def get_llm() -> StructuredLLM:
     return ClaudeLLM()
+
+
+def get_session_factory() -> sessionmaker:
+    """Session factory for background jobs, which outlive the request's session."""
+    return SessionLocal
 
 
 def current_user(

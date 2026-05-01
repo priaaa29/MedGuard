@@ -26,9 +26,28 @@ CORS_ORIGINS = [
 ENVIRONMENT = os.getenv("MEDGUARD_ENV", "development")
 IS_PRODUCTION = ENVIRONMENT == "production"
 
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BACKEND_DIR / 'medguard.db'}")
+def _database_url() -> str:
+    url = os.getenv("DATABASE_URL", f"sqlite:///{BACKEND_DIR / 'medguard.db'}")
+    # Render and most hosts hand out postgres:// or postgresql:// URLs; SQLAlchemy
+    # needs the driver named to use psycopg 3.
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
+DATABASE_URL = _database_url()
 if IS_PRODUCTION and DATABASE_URL.startswith("sqlite"):
     raise RuntimeError("Set DATABASE_URL to a Postgres database in production.")
+
+# Shared store for rate limits. Required in production: an in-memory limiter isn't
+# shared between workers or instances, so limits would multiply.
+REDIS_URL = os.getenv("REDIS_URL") or None
+if IS_PRODUCTION and not REDIS_URL:
+    raise RuntimeError("Set REDIS_URL in production so rate limits are shared between workers.")
+
+# A routine still "building" after this long is assumed lost (e.g. the server restarted).
+ROUTINE_STALE_MINUTES = 15
 
 SESSION_COOKIE = "medguard_session"
 SESSION_DAYS = int(os.getenv("MEDGUARD_SESSION_DAYS", "14"))

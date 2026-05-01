@@ -1,11 +1,22 @@
 "use client";
 
-import { AlertCircle, AlertOctagon, ArrowLeft, CircleCheck, Loader2, Pencil, Trash2, TriangleAlert } from "lucide-react";
+import {
+  AlertCircle,
+  AlertOctagon,
+  ArrowLeft,
+  CircleCheck,
+  Loader2,
+  Pencil,
+  RotateCcw,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { toast } from "sonner";
+import { GeneratingStep } from "@/components/routines/generating-step";
 import { InteractionList } from "@/components/routines/interaction-list";
 import { Timetable } from "@/components/routines/timetable";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -27,7 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError } from "@/lib/api";
 import { formatDate, formatGap, MEAL_RELATION_LABELS, SOURCE_LABELS } from "@/lib/format";
-import type { RoutineDetail as RoutineDetailType } from "@/lib/types";
+import type { AnalysisResult, RoutineDetail as RoutineDetailType } from "@/lib/types";
 import { useApiQuery } from "@/lib/use-api";
 
 const RULE_SOURCE_LABELS = {
@@ -94,17 +105,115 @@ export function RoutineDetail() {
     );
   }
 
-  return <RoutineView routine={query.data} onRenamed={query.setData} />;
+  const routine = query.data;
+  if (routine.status === "pending") return <PendingRoutine routine={routine} onChange={query.setData} />;
+  if (routine.status === "failed" || !routine.result) return <FailedRoutine routine={routine} onChange={query.setData} />;
+  return <RoutineView routine={routine} result={routine.result} onRenamed={query.setData} />;
+}
+
+const POLL_MS = 3000;
+
+function PendingRoutine({ routine, onChange }: { routine: RoutineDetailType; onChange: (r: RoutineDetailType) => void }) {
+  const router = useRouter();
+
+  // The routine is built in the background; check back until it's ready or failed.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setInterval(async () => {
+      try {
+        const latest = await api.getRoutine(routine.id);
+        if (!cancelled && latest.status !== "pending") onChange(latest);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) router.replace(`/login?next=/routines/${routine.id}`);
+        // Other errors: keep polling; a blip shouldn't end the wait.
+      }
+    }, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [routine.id, onChange, router]);
+
+  return (
+    <div className="space-y-8">
+      <BackLink />
+      <TitleBar routine={routine} onRenamed={onChange} />
+      <GeneratingStep startedAt={routine.updated_at} />
+    </div>
+  );
+}
+
+function FailedRoutine({ routine, onChange }: { routine: RoutineDetailType; onChange: (r: RoutineDetailType) => void }) {
+  const [retrying, setRetrying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function retry() {
+    setRetrying(true);
+    setError(null);
+    try {
+      onChange(await api.retryRoutine(routine.id));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Couldn't start again. Please try later.");
+      setRetrying(false);
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      <BackLink />
+      <TitleBar routine={routine} onRenamed={onChange} />
+      <Alert variant="destructive" role="alert">
+        <AlertCircle aria-hidden />
+        <AlertTitle>Couldn&apos;t build this routine</AlertTitle>
+        <AlertDescription>
+          <p>{routine.error ?? "Something went wrong."}</p>
+          {error && <p className="mt-1 font-medium">{error}</p>}
+        </AlertDescription>
+      </Alert>
+      <div className="flex flex-wrap gap-3">
+        <Button onClick={retry} disabled={retrying}>
+          {retrying ? (
+            <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden />
+          ) : (
+            <RotateCcw data-icon="inline-start" aria-hidden />
+          )}
+          Try again
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/routines/new">Start over</Link>
+        </Button>
+      </div>
+      <section aria-labelledby="saved-meds" className="rounded-lg border border-border bg-card px-4 py-3">
+        <h2 id="saved-meds" className="font-medium">
+          Saved medicines
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">{routine.medications.map((m) => m.name).join(", ")}</p>
+      </section>
+    </div>
+  );
+}
+
+function BackLink() {
+  return (
+    <Button asChild variant="ghost" className="-ml-3 text-muted-foreground">
+      <Link href="/routines">
+        <ArrowLeft data-icon="inline-start" aria-hidden />
+        My routines
+      </Link>
+    </Button>
+  );
 }
 
 function RoutineView({
   routine,
+  result,
   onRenamed,
 }: {
   routine: RoutineDetailType;
+  result: AnalysisResult;
   onRenamed: (routine: RoutineDetailType) => void;
 }) {
-  const { result, schedule } = routine;
+  const { schedule } = routine;
   const { routine: plan } = result;
   const highRisk = result.warnings.filter((w) => w.startsWith("High-risk"));
   const otherWarnings = result.warnings.filter((w) => !w.startsWith("High-risk"));
@@ -112,12 +221,7 @@ function RoutineView({
   return (
     <div className="space-y-10">
       <div className="space-y-4">
-        <Button asChild variant="ghost" className="-ml-3 text-muted-foreground">
-          <Link href="/routines">
-            <ArrowLeft data-icon="inline-start" aria-hidden />
-            My routines
-          </Link>
-        </Button>
+        <BackLink />
         <TitleBar routine={routine} onRenamed={onRenamed} />
       </div>
 

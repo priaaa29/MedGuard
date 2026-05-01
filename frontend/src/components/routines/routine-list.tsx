@@ -72,17 +72,26 @@ export function RoutineList() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="truncate font-medium">{routine.title}</p>
-                {routine.valid ? (
-                  <Badge variant="success">Checked</Badge>
-                ) : (
-                  <Badge variant="warning">Needs pharmacist review</Badge>
-                )}
+                {routine.status === "pending" && <Badge variant="secondary">Building…</Badge>}
+                {routine.status === "failed" && <Badge variant="destructive">Couldn&apos;t build</Badge>}
+                {routine.status === "ready" &&
+                  (routine.valid ? (
+                    <Badge variant="success">Checked</Badge>
+                  ) : (
+                    <Badge variant="warning">Needs pharmacist review</Badge>
+                  ))}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 <span className="tabular-nums">{routine.medicines.length}</span>{" "}
-                {routine.medicines.length === 1 ? "medicine" : "medicines"} ·{" "}
-                <span className="tabular-nums">{routine.dose_count}</span> daily{" "}
-                {routine.dose_count === 1 ? "dose" : "doses"} · {formatDate(routine.created_at)}
+                {routine.medicines.length === 1 ? "medicine" : "medicines"}
+                {routine.status === "ready" && (
+                  <>
+                    {" "}
+                    · <span className="tabular-nums">{routine.dose_count}</span> daily{" "}
+                    {routine.dose_count === 1 ? "dose" : "doses"}
+                  </>
+                )}{" "}
+                · {formatDate(routine.created_at)}
               </p>
             </div>
             <ChevronRight

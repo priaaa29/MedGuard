@@ -11,6 +11,8 @@ Next.js 16 (App Router, Cache Components) + Tailwind v4 + shadcn/ui. Brand: see 
 # 2. Web app
 npm install
 npm run dev          # http://localhost:3000
+
+# Deploying: see ../DEPLOY.md
 ```
 
 The browser only talks to `localhost:3000`. `next.config.ts` forwards `/api/*` to the FastAPI
@@ -33,8 +35,13 @@ same-origin.
 
 ## Notes
 
-- Building a routine can take a minute (up to three Claude calls), so `experimental.proxyTimeout`
-  is raised to 4 minutes. Uploads up to 10 MB pass through `proxyClientMaxBodySize`.
+- Routines are built in the background: the wizard saves and goes to `/routines/[id]`, which
+  shows progress and polls every 3 s until the routine is ready or failed (with **Try again**).
+  No request waits on Claude for long, which keeps under Vercel's 120 s proxy limit.
+- Reading a prescription is one Claude call (10–30 s). Locally `experimental.proxyTimeout` is
+  120 s, and uploads up to 10 MB pass through `proxyClientMaxBodySize`.
+- Security headers, including a Content-Security-Policy in production builds, are set in
+  `next.config.ts`.
 - Per-user data is fetched in client components. Pages prerender as static shells.
 - Types in `src/lib/types.ts` mirror `backend/app/schemas.py`. Update both together.
 - shadcn components were adjusted for 40 px minimum touch targets, and Badge/Alert gained
