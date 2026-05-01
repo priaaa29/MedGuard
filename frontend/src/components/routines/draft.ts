@@ -11,7 +11,7 @@ export type DraftMedication = {
   frequency: string;
   mealRelation: MealRelation;
   instructions: string;
-  /** Fields Claude couldn't read clearly; shown highlighted until edited. */
+  /** Fields the AI couldn't read clearly; shown highlighted until edited. */
   uncertain: string[];
 };
 

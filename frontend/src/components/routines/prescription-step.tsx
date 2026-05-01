@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, FileUp, Loader2, PencilLine } from "lucide-react";
+import { AlertCircle, FileUp, Loader2, PencilLine, ShieldAlert } from "lucide-react";
 import { useRef, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -158,7 +158,7 @@ export function PrescriptionStep({ onExtracted, onManual, onUnauthorized }: Prop
               />
             </label>
             <FieldDescription id="file-hint">
-              A clear, flat photo in good light works best. The file is read once and not stored.
+              A clear, flat photo in good light works best. MedGuard doesn&apos;t store the file.
             </FieldDescription>
             {fieldError && <FieldError id="file-error">{fieldError}</FieldError>}
           </Field>
@@ -188,6 +188,17 @@ export function PrescriptionStep({ onExtracted, onManual, onUnauthorized }: Prop
           </Field>
         </TabsContent>
       </Tabs>
+
+      {/* Google's free Gemini tier may use inputs to improve its products, with human review. */}
+      <div className="flex gap-3 rounded-lg border border-border bg-muted px-4 py-3 text-sm">
+        <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+        <p>
+          <span className="font-medium">Before you upload:</span> MedGuard uses Google&apos;s Gemini AI to read
+          prescriptions. On its free service, Google may use what you send to improve its products, and people at
+          Google may review it. Cover your name, address and doctor&apos;s details first, or type just the medicine
+          lines instead.
+        </p>
+      </div>
 
       {notPrescription && (
         <Alert variant="warning" role="alert">
