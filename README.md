@@ -15,7 +15,7 @@ daily routine that you can save to your account.
 
 | Part | Where | Docs |
 |---|---|---|
-| API (FastAPI, Claude, Postgres) | `backend/` | [backend/README.md](backend/README.md) |
+| API (FastAPI, Gemini AI, Postgres) | `backend/` | [backend/README.md](backend/README.md) |
 | Web app (Next.js) | `frontend/` | [frontend/README.md](frontend/README.md) |
 | Deployment (Render + Vercel) | `render.yaml`, `.github/workflows/ci.yml` | [DEPLOY.md](DEPLOY.md) |
 

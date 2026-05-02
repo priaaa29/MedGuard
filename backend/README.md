@@ -8,15 +8,32 @@ medicine timetable that a deterministic checker verifies.
 ```bash
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-cp .env.example .env            # add ANTHROPIC_API_KEY
+cp .env.example .env            # add GEMINI_API_KEY (free from aistudio.google.com/apikey)
 .venv/bin/alembic upgrade head  # create/upgrade the database (SQLite at backend/medguard.db by default)
 .venv/bin/uvicorn app.main:app --reload
-.venv/bin/python -m pytest      # no API key needed (Claude is faked)
-.venv/bin/python -m scripts.smoke_test   # live run against Claude (a few cents)
+.venv/bin/python -m pytest      # no API key needed (the AI is faked)
+.venv/bin/python -m scripts.smoke_test   # live run against the configured AI (2 calls)
 ```
 
 `requirements.txt` holds production dependencies only; `requirements-dev.txt` adds the test
-tools. Production setup (Render, Postgres, Redis) is in [../DEPLOY.md](../DEPLOY.md).
+tools. Production setup (Render, Neon Postgres, Redis, all free) is in [../DEPLOY.md](../DEPLOY.md).
+
+## AI provider
+
+| Setting | Default | Options |
+|---|---|---|
+| `MEDGUARD_LLM_PROVIDER` | `gemini` | `gemini` (free tier) or `anthropic` (Claude, paid) |
+| `MEDGUARD_GEMINI_MODEL` | `gemini-3.5-flash-lite` | any Gemini model with JSON-schema output |
+| `MEDGUARD_ROUTINE_PLANNER` | `scheduler` | `scheduler` (built-in, no AI call) or `llm` (AI drafts, up to 2 calls) |
+
+The AI is used for two things: reading a prescription (`app/llm/extract.py`) and checking
+for interactions the curated data misses (`app/llm/review.py`). Both use JSON-schema output
+behind one interface (`StructuredLLM`), with adapters in `app/llm/gemini.py` and
+`app/llm/client.py` (Claude).
+
+Gemini's free tier may use inputs to improve Google's products, with human review. Interaction
+checks send only medicine details. The upload screen asks people to cover their personal details.
+Use a paid tier for real patient data (see DEPLOY.md).
 
 ## Endpoints
 
@@ -51,7 +68,7 @@ Every endpoint except health, register and login needs a logged-in session cooki
   returns 404.
 - Prescription files are read in memory and never stored. A saved routine keeps the confirmed
   medicines, the schedule and the result.
-- Rate limits: login is limited per email and per IP. Claude calls are limited per user
+- Rate limits: login is limited per email and per IP. AI calls are limited per user
   (20 extractions and 20 routines an hour by default). Each user can save up to 50 routines.
   Limits live in Redis when `REDIS_URL` is set (required in production) and in memory
   otherwise. If Redis is unreachable, requests are allowed rather than blocked.
@@ -62,21 +79,30 @@ Every endpoint except health, register and login needs a logged-in session cooki
 confirmed medicines + daily schedule
   -> curated dataset (data/drug_food_interactions.csv)       deterministic
   -> curated timing rules (data/timing_rules.json)            deterministic
-  -> Claude interaction review (only what's missing)          labelled source="ai"
+  -> AI interaction review (only what's missing)              labelled source="ai"
   -> constraint set (prescription > curated > ai > none)      deterministic
-  -> Claude routine draft
-  -> validator (app/scheduling/validator.py)                  accept / reject, one retry
+  -> timetable: built-in scheduler (app/scheduling/planner.py) deterministic, default
+                or AI draft (app/llm/routine.py, one retry)   MEDGUARD_ROUTINE_PLANNER=llm
+  -> validator (app/scheduling/validator.py)                  accept / reject
   -> safety scrub (app/core/safety.py)
 ```
 
-What Claude is allowed to do:
-- It only proposes times. Dose amounts come from the confirmed prescription, and the validator
-  rejects any change to how many doses a medicine gets per day.
-- If the timetable still fails the checker after the retry, `routine.valid` is `false`. The
-  summary then tells the user not to follow the times and to take the list to a pharmacist.
+The scheduler lists candidate times for each medicine that meet its own rules: dose count,
+waking hours, food timing, morning or evening, and spacing. It then searches across medicines,
+most constrained first, for a combination that also keeps every required gap between them.
+It prefers times anchored to meals, waking and bedtime. If no combination works,
+`routine.valid` is `false` with a `no_schedule` issue.
+
+What the AI is allowed to do:
+- Dose amounts always come from the confirmed prescription, and the validator rejects any
+  change to how many doses a medicine gets per day.
+- If an AI-drafted timetable still fails the checker after the retry, `routine.valid` is
+  `false`. The summary then tells the user not to follow the times and to take the list to a
+  pharmacist.
 - Sentences that tell someone to change a dose, stop a medicine, or that diagnose are removed.
   Each removal is listed in `safety_modifications`.
-- If Claude is unavailable, curated interactions and constraints are still returned.
+- If the AI is unavailable or out of quota, curated interactions still come back. With the
+  scheduler, the routine is still built.
 
 ## Known gaps
 

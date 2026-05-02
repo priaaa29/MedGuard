@@ -37,8 +37,8 @@ same-origin.
 
 - Routines are built in the background: the wizard saves and goes to `/routines/[id]`, which
   shows progress and polls every 3 s until the routine is ready or failed (with **Try again**).
-  No request waits on Claude for long, which keeps under Vercel's 120 s proxy limit.
-- Reading a prescription is one Claude call (10–30 s). Locally `experimental.proxyTimeout` is
+  No request waits on the AI for long, which keeps under Vercel's 120 s proxy limit.
+- Reading a prescription is one AI call (10–30 s). Locally `experimental.proxyTimeout` is
   120 s, and uploads up to 10 MB pass through `proxyClientMaxBodySize`.
 - Security headers, including a Content-Security-Policy in production builds, are set in
   `next.config.ts`.
