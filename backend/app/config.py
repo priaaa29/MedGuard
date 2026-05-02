@@ -42,17 +42,20 @@ CORS_ORIGINS = [
 ENVIRONMENT = os.getenv("MEDGUARD_ENV", "development")
 IS_PRODUCTION = ENVIRONMENT == "production"
 
-def _database_url() -> str:
-    url = os.getenv("DATABASE_URL", f"sqlite:///{BACKEND_DIR / 'medguard.db'}")
-    # Render and most hosts hand out postgres:// or postgresql:// URLs; SQLAlchemy
-    # needs the driver named to use psycopg 3.
+def _with_driver(url: str) -> str:
+    # Neon, Render and most hosts hand out postgres:// or postgresql:// URLs;
+    # SQLAlchemy needs the driver named to use psycopg 3.
     for prefix in ("postgres://", "postgresql://"):
         if url.startswith(prefix):
             return "postgresql+psycopg://" + url[len(prefix):]
     return url
 
 
-DATABASE_URL = _database_url()
+# App traffic. On Neon this is the pooled string (hostname ends in -pooler).
+DATABASE_URL = _with_driver(os.getenv("DATABASE_URL", f"sqlite:///{BACKEND_DIR / 'medguard.db'}"))
+# Migrations need a direct connection: Neon's pooler (PgBouncer, transaction mode)
+# doesn't keep session state between statements. Falls back to DATABASE_URL.
+MIGRATIONS_DATABASE_URL = _with_driver(os.getenv("DATABASE_URL_UNPOOLED") or DATABASE_URL)
 if IS_PRODUCTION and DATABASE_URL.startswith("sqlite"):
     raise RuntimeError("Set DATABASE_URL to a Postgres database in production.")
 

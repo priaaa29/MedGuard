@@ -1,4 +1,7 @@
-"""Alembic environment: uses the app's DATABASE_URL and models, not alembic.ini."""
+"""Alembic environment: uses the app's database settings and models, not alembic.ini.
+
+Runs over the direct connection (DATABASE_URL_UNPOOLED on Neon) when one is set.
+"""
 
 from logging.config import fileConfig
 
@@ -6,18 +9,18 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app import models  # noqa: F401  (registers tables on Base.metadata)
-from app.config import DATABASE_URL
+from app.config import MIGRATIONS_DATABASE_URL
 from app.db import Base
 
 config = context.config
-config.set_main_option("sqlalchemy.url", DATABASE_URL.replace("%", "%%"))
+config.set_main_option("sqlalchemy.url", MIGRATIONS_DATABASE_URL.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
 # SQLite can't ALTER most things in place; batch mode rebuilds tables instead.
-RENDER_AS_BATCH = DATABASE_URL.startswith("sqlite")
+RENDER_AS_BATCH = MIGRATIONS_DATABASE_URL.startswith("sqlite")
 
 
 def run_migrations_offline() -> None:

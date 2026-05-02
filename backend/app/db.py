@@ -18,7 +18,14 @@ def utcnow() -> datetime:
 
 
 def make_engine(url: str) -> Engine:
-    kwargs = {"connect_args": {"check_same_thread": False}} if url.startswith("sqlite") else {"pool_pre_ping": True}
+    if url.startswith("sqlite"):
+        kwargs = {"connect_args": {"check_same_thread": False}}
+    else:
+        kwargs = {"pool_pre_ping": True}
+        if "-pooler." in url:
+            # Behind PgBouncer a statement can land on a different server connection,
+            # so don't let psycopg prepare statements server-side.
+            kwargs["connect_args"] = {"prepare_threshold": None}
     engine = create_engine(url, **kwargs)
     if url.startswith("sqlite"):
         # SQLite ignores foreign keys (and so ON DELETE CASCADE) unless asked.
