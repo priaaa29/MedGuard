@@ -19,7 +19,8 @@ daily routine that you can save to your account.
 | Web app (Next.js) | `frontend/` | [frontend/README.md](frontend/README.md) |
 | Deployment (Render + Vercel) | `render.yaml`, `.github/workflows/ci.yml` | [DEPLOY.md](DEPLOY.md) |
 
-The rest of this README describes the original Streamlit demo, which is still live.
+Most of this README describes the original Streamlit demo, which is still live. The
+[App Preview](#️-app-preview) at the end shows the new web app.
 
 ---
 
@@ -124,11 +125,23 @@ This tool is for awareness only and not a substitute for professional medical ad
 
 ## 🖥️ App Preview
 
-### Home Screen
-![Home](assets/Home-UI.png)
+### Home
+![MedGuard home page](assets/webapp-home.png)
 
-### Example Result
-![Result](assets/Working.png)
+### Add your prescription
+Upload a photo or PDF, or type the medicine lines.
+
+![Typing a prescription](assets/webapp-prescription.png)
+
+### Check your medicines
+Gemini reads the prescription and you confirm each medicine. Anything it wasn't sure of is highlighted.
+
+![Reviewing the medicines read from the prescription](assets/webapp-review.png)
+
+### Your daily routine
+Times are planned around your meals and sleep, with medicines that interact kept apart.
+
+![A checked daily timetable](assets/webapp-routine.png)
 
 ## 🚀 Live Demo
 [Try MedGuard AI](https://medguard29.streamlit.app)
