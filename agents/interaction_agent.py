@@ -1,11 +1,4 @@
-import sys
-from pathlib import Path
-
-SRC_PATH = Path(__file__).resolve().parent.parent / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.append(str(SRC_PATH))
-
-from risk_model import get_medicine_info
+from mcp_server.medicine_server import get_interactions, get_severity_summary
 
 
 class InteractionAgent:
@@ -16,34 +9,26 @@ class InteractionAgent:
                 "medicine_name": None,
                 "interactions": [],
                 "interactions_by_severity": {"High": [], "Medium": [], "Low": []},
+                "severity_summary": {"High": 0, "Medium": 0, "Low": 0},
                 "error": intake_result.get("error") or "medicine_not_found",
             }
 
-        result, _, _ = get_medicine_info(medicine_name)
-        if result is None or result.empty:
+        interaction_response = get_interactions(medicine_name)
+        severity_response = get_severity_summary(medicine_name)
+
+        if interaction_response["error"]:
             return {
                 "medicine_name": medicine_name,
                 "interactions": [],
                 "interactions_by_severity": {"High": [], "Medium": [], "Low": []},
-                "error": "interactions_not_found",
+                "severity_summary": {"High": 0, "Medium": 0, "Low": 0},
+                "error": interaction_response["error"],
             }
 
-        severity_order = {"High": 3, "Medium": 2, "Low": 1}
-        records = (
-            result.copy()
-            .assign(**{"Severity Score": result["Severity"].map(severity_order)})
-            .sort_values("Severity Score", ascending=False)
-            .drop(columns=["Severity Score"])
-            .to_dict("records")
-        )
-
-        grouped = {"High": [], "Medium": [], "Low": []}
-        for interaction in records:
-            grouped[interaction["Severity"]].append(interaction)
-
         return {
-            "medicine_name": medicine_name,
-            "interactions": records,
-            "interactions_by_severity": grouped,
+            "medicine_name": interaction_response["medicine_name"],
+            "interactions": interaction_response["interactions"],
+            "interactions_by_severity": interaction_response["interactions_by_severity"],
+            "severity_summary": severity_response["severity_summary"],
             "error": None,
         }

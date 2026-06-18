@@ -40,6 +40,9 @@ class MedGuardOrchestrator:
             "error": intake.get("error") or interactions.get("error"),
             "interactions": interactions.get("interactions", []),
             "interactions_by_severity": interactions.get("interactions_by_severity", {}),
+            "severity_summary": interactions.get(
+                "severity_summary", {"High": 0, "Medium": 0, "Low": 0}
+            ),
             "risk_level": risk["risk_level"],
             "confidence_score": risk["confidence_score"],
             "recommendation": safety["final_recommendation"],
