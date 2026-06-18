@@ -1,0 +1,128 @@
+[
+  {
+    "test_id": "tc_001_known_medicine",
+    "description": "Known medicine lookup returns a medium-risk result.",
+    "type": "orchestrator",
+    "input": {
+      "query": "Ibuprofen"
+    },
+    "expected": {
+      "trajectory": [
+        "IntakeAgent",
+        "InteractionAgent",
+        "RiskAgent",
+        "RecommendationAgent",
+        "SafetyGuardAgent"
+      ],
+      "medicine_name": "Ibuprofen",
+      "risk_level": "Medium",
+      "safe_to_display": true,
+      "error": null
+    }
+  },
+  {
+    "test_id": "tc_002_high_risk_medicine",
+    "description": "High-risk medicine forces doctor escalation.",
+    "type": "orchestrator",
+    "input": {
+      "query": "Warfarin"
+    },
+    "expected": {
+      "trajectory": [
+        "IntakeAgent",
+        "InteractionAgent",
+        "RiskAgent",
+        "RecommendationAgent",
+        "SafetyGuardAgent"
+      ],
+      "medicine_name": "Warfarin",
+      "risk_level": "High",
+      "safe_to_display": true,
+      "see_doctor": true,
+      "modifications_include": ["added_high_risk_escalation"],
+      "recommendation_contains": ["doctor", "pharmacist"]
+    }
+  },
+  {
+    "test_id": "tc_003_typo_handling",
+    "description": "Typo resolves to Paracetamol and requires fuzzy confirmation.",
+    "type": "orchestrator",
+    "input": {
+      "query": "paracitamol"
+    },
+    "expected": {
+      "trajectory": [
+        "IntakeAgent",
+        "InteractionAgent",
+        "RiskAgent",
+        "RecommendationAgent",
+        "SafetyGuardAgent"
+      ],
+      "medicine_name": "Paracetamol",
+      "needs_confirmation": true,
+      "safe_to_display": true
+    }
+  },
+  {
+    "test_id": "tc_004_unknown_medicine",
+    "description": "Unknown medicine returns a safe blocked not-found result.",
+    "type": "orchestrator",
+    "input": {
+      "query": "xyzabc123"
+    },
+    "expected": {
+      "trajectory": [
+        "IntakeAgent",
+        "InteractionAgent",
+        "RiskAgent",
+        "RecommendationAgent",
+        "SafetyGuardAgent"
+      ],
+      "medicine_name": null,
+      "risk_level": "Not Found",
+      "safe_to_display": false,
+      "error": "medicine_not_found",
+      "modifications_include": ["blocked_low_confidence"]
+    }
+  },
+  {
+    "test_id": "tc_005_safety_guard",
+    "description": "Safety guard removes unsafe diagnosis, cure, and prescription wording.",
+    "type": "safety_guard",
+    "input": {
+      "intake_result": {
+        "error": null
+      },
+      "risk_result": {
+        "risk_level": "Medium",
+        "confidence_score": 85
+      },
+      "recommendation_result": {
+        "summary": "This can diagnose the issue, cure symptoms, and replace a prescription.",
+        "foods_to_avoid": [],
+        "recommendations": [],
+        "see_doctor": false
+      }
+    },
+    "expected": {
+      "safe_to_display": true,
+      "modifications_include": ["removed_diagnosis_language"],
+      "forbidden_terms": ["diagnose", "cure", "prescription"]
+    }
+  },
+  {
+    "test_id": "tc_006_memory_continuity",
+    "description": "Saved medicine profile and query history can be retrieved after a prior query.",
+    "type": "memory",
+    "input": {
+      "user_id": "eval_user",
+      "first_query": "Ibuprofen",
+      "follow_up": "What about my saved medicines?"
+    },
+    "expected": {
+      "saved_medicine": "Ibuprofen",
+      "history_contains_query": "Ibuprofen",
+      "memory_lookup_succeeds": true
+    }
+  }
+]

@@ -48,6 +48,30 @@ MedGuard AI:
 
 ---
 
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    User[User]
+    Streamlit[Streamlit UI]
+    Orchestrator[MedGuard Orchestrator]
+    Agents[Intake → Interaction → Risk → Recommendation → Safety Guard]
+    MCP[MCP Medicine Tools]
+    Dataset[(CSV Interaction Dataset)]
+    Memory[(SQLite Memory Bank)]
+    Audit[(JSONL Audit Logs)]
+
+    User --> Streamlit
+    Streamlit --> Orchestrator
+    Orchestrator --> Agents
+    Agents --> MCP
+    MCP --> Dataset
+    Streamlit --> Memory
+    Orchestrator --> Audit
+```
+
+---
+
 ## 📊 Dataset
 
 The dataset is manually structured from real-world medical sources and designed for decision-making, not just analysis.

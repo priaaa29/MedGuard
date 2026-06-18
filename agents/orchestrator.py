@@ -3,6 +3,7 @@ from agents.interaction_agent import InteractionAgent
 from agents.recommendation_agent import RecommendationAgent
 from agents.risk_agent import RiskAgent
 from agents.safety_guard_agent import SafetyGuardAgent
+from tools.audit_logger import log_query
 
 
 class MedGuardOrchestrator:
@@ -13,7 +14,7 @@ class MedGuardOrchestrator:
         self.recommendation_agent = RecommendationAgent()
         self.safety_guard_agent = SafetyGuardAgent()
 
-    def run(self, query):
+    def run(self, query, user_id="anonymous"):
         trajectory = []
 
         trajectory.append("intake_agent")
@@ -31,7 +32,7 @@ class MedGuardOrchestrator:
         trajectory.append("safety_guard_agent")
         safety = self.safety_guard_agent.run(intake, risk, recommendation)
 
-        return {
+        response = {
             "query": query.strip(),
             "medicine_name": intake.get("matched_name"),
             "suggested_name": intake.get("suggested_name"),
@@ -50,3 +51,16 @@ class MedGuardOrchestrator:
             "modifications_made": safety["modifications_made"],
             "trajectory": trajectory,
         }
+
+        log_query(
+            user_id=user_id,
+            query=response["query"],
+            medicine_name=response["medicine_name"],
+            risk_level=response["risk_level"],
+            confidence_score=response["confidence_score"],
+            was_blocked=not response["safe_to_display"],
+            modifications=response["modifications_made"],
+            agent_trace=response["trajectory"],
+        )
+
+        return response

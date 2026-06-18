@@ -1,0 +1,466 @@
+{
+  "total": 6,
+  "passed": 6,
+  "failed": 0,
+  "results": [
+    {
+      "test_id": "tc_001_known_medicine",
+      "description": "Known medicine lookup returns a medium-risk result.",
+      "type": "orchestrator",
+      "status": "PASS",
+      "diagnostics": [],
+      "output": {
+        "query": "Ibuprofen",
+        "medicine_name": "Ibuprofen",
+        "suggested_name": "Ibuprofen",
+        "match_score": 100.0,
+        "needs_confirmation": false,
+        "error": null,
+        "interactions": [
+          {
+            "Medicine": "Ibuprofen",
+            "Food": "Alcohol",
+            "Interaction_Type": "Stomach Irritation",
+            "Severity": "Medium",
+            "Effect": "Increased risk of gastric bleeding",
+            "Recommendation": "Limit or avoid alcohol"
+          },
+          {
+            "Medicine": "Ibuprofen",
+            "Food": "Spicy Food",
+            "Interaction_Type": "Stomach Irritation",
+            "Severity": "Medium",
+            "Effect": "Increases gastric discomfort",
+            "Recommendation": "Avoid spicy food"
+          }
+        ],
+        "interactions_by_severity": {
+          "High": [],
+          "Medium": [
+            {
+              "Medicine": "Ibuprofen",
+              "Food": "Alcohol",
+              "Interaction_Type": "Stomach Irritation",
+              "Severity": "Medium",
+              "Effect": "Increased risk of gastric bleeding",
+              "Recommendation": "Limit or avoid alcohol"
+            },
+            {
+              "Medicine": "Ibuprofen",
+              "Food": "Spicy Food",
+              "Interaction_Type": "Stomach Irritation",
+              "Severity": "Medium",
+              "Effect": "Increases gastric discomfort",
+              "Recommendation": "Avoid spicy food"
+            }
+          ],
+          "Low": []
+        },
+        "severity_summary": {
+          "High": 0,
+          "Medium": 2,
+          "Low": 0
+        },
+        "risk_level": "Medium",
+        "confidence_score": 100,
+        "recommendation": {
+          "summary": "Ibuprofen has interactions that may affect effectiveness or side effects. Ask a pharmacist or doctor if you use these foods or drinks often.",
+          "foods_to_avoid": [
+            "Alcohol",
+            "Spicy Food"
+          ],
+          "recommendations": [
+            {
+              "food": "Alcohol",
+              "severity": "Medium",
+              "effect": "Increased risk of gastric bleeding",
+              "recommendation": "Limit or avoid alcohol"
+            },
+            {
+              "food": "Spicy Food",
+              "severity": "Medium",
+              "effect": "Increases gastric discomfort",
+              "recommendation": "Avoid spicy food"
+            }
+          ],
+          "see_doctor": false
+        },
+        "safe_to_display": true,
+        "modifications_made": [],
+        "trajectory": [
+          "intake_agent",
+          "interaction_agent",
+          "risk_agent",
+          "recommendation_agent",
+          "safety_guard_agent"
+        ]
+      }
+    },
+    {
+      "test_id": "tc_002_high_risk_medicine",
+      "description": "High-risk medicine forces doctor escalation.",
+      "type": "orchestrator",
+      "status": "PASS",
+      "diagnostics": [],
+      "output": {
+        "query": "Warfarin",
+        "medicine_name": "Warfarin",
+        "suggested_name": "Warfarin",
+        "match_score": 100.0,
+        "needs_confirmation": false,
+        "error": null,
+        "interactions": [
+          {
+            "Medicine": "Warfarin",
+            "Food": "Green Leafy Vegetables",
+            "Interaction_Type": "Effect Altered",
+            "Severity": "High",
+            "Effect": "Vitamin K affects drug action",
+            "Recommendation": "Maintain consistent intake"
+          },
+          {
+            "Medicine": "Warfarin",
+            "Food": "Alcohol",
+            "Interaction_Type": "Bleeding Risk",
+            "Severity": "High",
+            "Effect": "Increases bleeding risk",
+            "Recommendation": "Avoid alcohol completely"
+          },
+          {
+            "Medicine": "Warfarin",
+            "Food": "Garlic",
+            "Interaction_Type": "Effect Increased",
+            "Severity": "Medium",
+            "Effect": "May increase bleeding tendency",
+            "Recommendation": "Limit garlic intake"
+          }
+        ],
+        "interactions_by_severity": {
+          "High": [
+            {
+              "Medicine": "Warfarin",
+              "Food": "Green Leafy Vegetables",
+              "Interaction_Type": "Effect Altered",
+              "Severity": "High",
+              "Effect": "Vitamin K affects drug action",
+              "Recommendation": "Maintain consistent intake"
+            },
+            {
+              "Medicine": "Warfarin",
+              "Food": "Alcohol",
+              "Interaction_Type": "Bleeding Risk",
+              "Severity": "High",
+              "Effect": "Increases bleeding risk",
+              "Recommendation": "Avoid alcohol completely"
+            }
+          ],
+          "Medium": [
+            {
+              "Medicine": "Warfarin",
+              "Food": "Garlic",
+              "Interaction_Type": "Effect Increased",
+              "Severity": "Medium",
+              "Effect": "May increase bleeding tendency",
+              "Recommendation": "Limit garlic intake"
+            }
+          ],
+          "Low": []
+        },
+        "severity_summary": {
+          "High": 2,
+          "Medium": 1,
+          "Low": 0
+        },
+        "risk_level": "High",
+        "confidence_score": 100,
+        "recommendation": {
+          "summary": "Warfarin has high-risk food or drink interactions in this dataset. Review the listed items and speak with a doctor or pharmacist before making changes. Contact a doctor or pharmacist before changing habits or medication. Seek emergency help immediately for severe symptoms such as trouble breathing, fainting, chest pain, severe bleeding, or confusion.",
+          "foods_to_avoid": [
+            "Green Leafy Vegetables",
+            "Alcohol",
+            "Garlic"
+          ],
+          "recommendations": [
+            {
+              "food": "Green Leafy Vegetables",
+              "severity": "High",
+              "effect": "Vitamin K affects drug action",
+              "recommendation": "Maintain consistent intake"
+            },
+            {
+              "food": "Alcohol",
+              "severity": "High",
+              "effect": "Increases bleeding risk",
+              "recommendation": "Avoid alcohol completely"
+            },
+            {
+              "food": "Garlic",
+              "severity": "Medium",
+              "effect": "May increase bleeding tendency",
+              "recommendation": "Limit garlic intake"
+            }
+          ],
+          "see_doctor": true
+        },
+        "safe_to_display": true,
+        "modifications_made": [
+          "added_high_risk_escalation"
+        ],
+        "trajectory": [
+          "intake_agent",
+          "interaction_agent",
+          "risk_agent",
+          "recommendation_agent",
+          "safety_guard_agent"
+        ]
+      }
+    },
+    {
+      "test_id": "tc_003_typo_handling",
+      "description": "Typo resolves to Paracetamol and requires fuzzy confirmation.",
+      "type": "orchestrator",
+      "status": "PASS",
+      "diagnostics": [],
+      "output": {
+        "query": "paracitamol",
+        "medicine_name": "Paracetamol",
+        "suggested_name": "Paracetamol",
+        "match_score": 90.9090909090909,
+        "needs_confirmation": true,
+        "error": null,
+        "interactions": [
+          {
+            "Medicine": "Paracetamol",
+            "Food": "Alcohol",
+            "Interaction_Type": "Toxicity Risk",
+            "Severity": "High",
+            "Effect": "Liver damage risk increases",
+            "Recommendation": "Avoid alcohol completely"
+          }
+        ],
+        "interactions_by_severity": {
+          "High": [
+            {
+              "Medicine": "Paracetamol",
+              "Food": "Alcohol",
+              "Interaction_Type": "Toxicity Risk",
+              "Severity": "High",
+              "Effect": "Liver damage risk increases",
+              "Recommendation": "Avoid alcohol completely"
+            }
+          ],
+          "Medium": [],
+          "Low": []
+        },
+        "severity_summary": {
+          "High": 1,
+          "Medium": 0,
+          "Low": 0
+        },
+        "risk_level": "High",
+        "confidence_score": 91,
+        "recommendation": {
+          "summary": "Paracetamol has high-risk food or drink interactions in this dataset. Review the listed items and speak with a doctor or pharmacist before making changes. Contact a doctor or pharmacist before changing habits or medication. Seek emergency help immediately for severe symptoms such as trouble breathing, fainting, chest pain, severe bleeding, or confusion.",
+          "foods_to_avoid": [
+            "Alcohol"
+          ],
+          "recommendations": [
+            {
+              "food": "Alcohol",
+              "severity": "High",
+              "effect": "Liver damage risk increases",
+              "recommendation": "Avoid alcohol completely"
+            }
+          ],
+          "see_doctor": true
+        },
+        "safe_to_display": true,
+        "modifications_made": [
+          "added_high_risk_escalation"
+        ],
+        "trajectory": [
+          "intake_agent",
+          "interaction_agent",
+          "risk_agent",
+          "recommendation_agent",
+          "safety_guard_agent"
+        ]
+      }
+    },
+    {
+      "test_id": "tc_004_unknown_medicine",
+      "description": "Unknown medicine returns a safe blocked not-found result.",
+      "type": "orchestrator",
+      "status": "PASS",
+      "diagnostics": [],
+      "output": {
+        "query": "xyzabc123",
+        "medicine_name": null,
+        "suggested_name": "Vitamin B12",
+        "match_score": 40.0,
+        "needs_confirmation": false,
+        "error": "medicine_not_found",
+        "interactions": [],
+        "interactions_by_severity": {
+          "High": [],
+          "Medium": [],
+          "Low": []
+        },
+        "severity_summary": {
+          "High": 0,
+          "Medium": 0,
+          "Low": 0
+        },
+        "risk_level": "Not Found",
+        "confidence_score": 40,
+        "recommendation": {
+          "summary": "Insufficient data for this medicine. Please consult a pharmacist or doctor.",
+          "foods_to_avoid": [],
+          "recommendations": [],
+          "see_doctor": false
+        },
+        "safe_to_display": false,
+        "modifications_made": [
+          "blocked_low_confidence"
+        ],
+        "trajectory": [
+          "intake_agent",
+          "interaction_agent",
+          "risk_agent",
+          "recommendation_agent",
+          "safety_guard_agent"
+        ]
+      }
+    },
+    {
+      "test_id": "tc_005_safety_guard",
+      "description": "Safety guard removes unsafe diagnosis, cure, and prescription wording.",
+      "type": "safety_guard",
+      "status": "PASS",
+      "diagnostics": [],
+      "output": {
+        "safe_to_display": true,
+        "final_recommendation": {
+          "summary": "This can medical advice the issue, medical advice symptoms, and replace a medical advice.",
+          "foods_to_avoid": [],
+          "recommendations": [],
+          "see_doctor": false
+        },
+        "modifications_made": [
+          "removed_diagnosis_language"
+        ]
+      }
+    },
+    {
+      "test_id": "tc_006_memory_continuity",
+      "description": "Saved medicine profile and query history can be retrieved after a prior query.",
+      "type": "memory",
+      "status": "PASS",
+      "diagnostics": [],
+      "output": {
+        "follow_up": "What about my saved medicines?",
+        "medicines": [
+          {
+            "medicine_name": "Ibuprofen",
+            "added_at": "2026-07-07 05:42:03"
+          }
+        ],
+        "history": [
+          {
+            "query": "Ibuprofen",
+            "medicine_name": "Ibuprofen",
+            "risk_level": "Medium",
+            "confidence_score": 100,
+            "queried_at": "2026-07-07 05:42:03"
+          }
+        ],
+        "orchestrator_result": {
+          "query": "Ibuprofen",
+          "medicine_name": "Ibuprofen",
+          "suggested_name": "Ibuprofen",
+          "match_score": 100.0,
+          "needs_confirmation": false,
+          "error": null,
+          "interactions": [
+            {
+              "Medicine": "Ibuprofen",
+              "Food": "Alcohol",
+              "Interaction_Type": "Stomach Irritation",
+              "Severity": "Medium",
+              "Effect": "Increased risk of gastric bleeding",
+              "Recommendation": "Limit or avoid alcohol"
+            },
+            {
+              "Medicine": "Ibuprofen",
+              "Food": "Spicy Food",
+              "Interaction_Type": "Stomach Irritation",
+              "Severity": "Medium",
+              "Effect": "Increases gastric discomfort",
+              "Recommendation": "Avoid spicy food"
+            }
+          ],
+          "interactions_by_severity": {
+            "High": [],
+            "Medium": [
+              {
+                "Medicine": "Ibuprofen",
+                "Food": "Alcohol",
+                "Interaction_Type": "Stomach Irritation",
+                "Severity": "Medium",
+                "Effect": "Increased risk of gastric bleeding",
+                "Recommendation": "Limit or avoid alcohol"
+              },
+              {
+                "Medicine": "Ibuprofen",
+                "Food": "Spicy Food",
+                "Interaction_Type": "Stomach Irritation",
+                "Severity": "Medium",
+                "Effect": "Increases gastric discomfort",
+                "Recommendation": "Avoid spicy food"
+              }
+            ],
+            "Low": []
+          },
+          "severity_summary": {
+            "High": 0,
+            "Medium": 2,
+            "Low": 0
+          },
+          "risk_level": "Medium",
+          "confidence_score": 100,
+          "recommendation": {
+            "summary": "Ibuprofen has interactions that may affect effectiveness or side effects. Ask a pharmacist or doctor if you use these foods or drinks often.",
+            "foods_to_avoid": [
+              "Alcohol",
+              "Spicy Food"
+            ],
+            "recommendations": [
+              {
+                "food": "Alcohol",
+                "severity": "Medium",
+                "effect": "Increased risk of gastric bleeding",
+                "recommendation": "Limit or avoid alcohol"
+              },
+              {
+                "food": "Spicy Food",
+                "severity": "Medium",
+                "effect": "Increases gastric discomfort",
+                "recommendation": "Avoid spicy food"
+              }
+            ],
+            "see_doctor": false
+          },
+          "safe_to_display": true,
+          "modifications_made": [],
+          "trajectory": [
+            "intake_agent",
+            "interaction_agent",
+            "risk_agent",
+            "recommendation_agent",
+            "safety_guard_agent"
+          ]
+        }
+      }
+    }
+  ]
+}
