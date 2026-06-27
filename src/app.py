@@ -7,13 +7,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
+from agents.orchestrator import MedGuardOrchestrator
 from memory.memory_bank import (
     add_medicine,
     get_history,
     get_user_medicines,
     log_interaction,
 )
-from risk_model import DATASET_VALIDATION, get_medicine_info
+from risk_model import DATASET_VALIDATION
 
 
 SEVERITY_DISPLAY = {
@@ -33,16 +34,7 @@ SEVERITY_DISPLAY = {
 
 
 st.set_page_config(page_title="MedGuard AI", layout="centered")
-
-
-def get_risk_level(result):
-    if result is None or result.empty:
-        return "Not Found"
-    if any(result["Severity"] == "High"):
-        return "High"
-    if any(result["Severity"] == "Medium"):
-        return "Medium"
-    return "Low"
+orchestrator = MedGuardOrchestrator()
 
 
 def render_sidebar(user_id):
@@ -69,35 +61,40 @@ def render_sidebar(user_id):
         st.sidebar.caption("No recent queries yet.")
 
 
-def render_interaction_group(result, severity):
-    group = result[result["Severity"] == severity]
-    if group.empty:
+def render_interaction_group(agent_result, severity):
+    group = agent_result["interactions_by_severity"].get(severity, [])
+    if not group:
         return
 
     display = SEVERITY_DISPLAY[severity]
     display["renderer"](display["title"])
 
-    for _, row in group.iterrows():
+    for row in group:
         st.markdown(f"**{row['Medicine']} + {row['Food']}**")
         st.write(f"Why: {row['Effect']}")
         st.write(f"Fix: {row['Recommendation']}")
         st.markdown("---")
 
 
-def render_safety_summary(result):
+def render_safety_summary(agent_result):
+    recommendation = agent_result["recommendation"]
+
     st.info(
         "Do not stop, skip, or change any medication without speaking to a doctor "
         "or pharmacist."
     )
 
-    if any(result["Severity"] == "High"):
+    if recommendation.get("summary"):
+        st.write(recommendation["summary"])
+
+    if agent_result["risk_level"] == "High":
         st.error(
             "🚨 High-risk interactions detected. Contact a doctor or pharmacist "
             "before changing habits or medication. Seek emergency help immediately "
             "for severe symptoms such as trouble breathing, fainting, chest pain, "
             "severe bleeding, or confusion."
         )
-    elif any(result["Severity"] == "Medium"):
+    elif agent_result["risk_level"] == "Medium":
         st.warning(
             "⚠️ Some interactions may affect effectiveness or side effects. "
             "Ask a doctor or pharmacist for guidance."
@@ -109,24 +106,21 @@ def render_safety_summary(result):
         )
 
 
-def render_results(medicine, matched_name, score):
-    result, _, _ = get_medicine_info(matched_name)
-    if result is None or result.empty:
+def render_results(agent_result):
+    if agent_result["error"] or not agent_result["safe_to_display"]:
         st.error("Medicine not found. Try a different spelling.")
         return
 
-    if medicine.strip().lower() != matched_name.lower():
-        st.info(f"Showing results for: {matched_name} (match score: {score:.0f}/100)")
-
-    result = result.copy()
-    severity_order = {"High": 3, "Medium": 2, "Low": 1}
-    result["Severity Score"] = result["Severity"].map(severity_order)
-    result = result.sort_values("Severity Score", ascending=False)
+    if agent_result["query"].lower() != agent_result["medicine_name"].lower():
+        st.info(
+            f"Showing results for: {agent_result['medicine_name']} "
+            f"(match score: {agent_result['match_score']:.0f}/100)"
+        )
 
     for severity in ("High", "Medium", "Low"):
-        render_interaction_group(result, severity)
+        render_interaction_group(agent_result, severity)
 
-    render_safety_summary(result)
+    render_safety_summary(agent_result)
 
 
 user_id = st.sidebar.text_input("User ID", value="demo_user")
@@ -160,45 +154,39 @@ if st.button("Check"):
 
     else:
         with st.spinner("Analyzing interactions..."):
-            result, matched_name, score = get_medicine_info(medicine)
+            agent_result = orchestrator.run(medicine)
 
-        risk_level = get_risk_level(result)
         log_interaction(
             user_id=user_id,
             query=medicine,
-            medicine_name=matched_name if result is not None else None,
-            risk_level=risk_level,
-            confidence_score=score,
+            medicine_name=agent_result["medicine_name"],
+            risk_level=agent_result["risk_level"],
+            confidence_score=agent_result["confidence_score"],
         )
 
-        if result is not None and not result.empty:
-            lookup = {
-                "medicine": medicine.strip(),
-                "matched_name": matched_name,
-                "score": score,
-            }
-
-            if medicine.strip().lower() != matched_name.lower():
-                st.session_state.pending_match = lookup
+        if not agent_result["error"] and agent_result["interactions"]:
+            if agent_result["needs_confirmation"]:
+                st.session_state.pending_match = agent_result
                 st.session_state.confirmed_match = None
             else:
                 st.session_state.pending_match = None
-                st.session_state.confirmed_match = lookup
+                st.session_state.confirmed_match = agent_result
 
         else:
             st.session_state.pending_match = None
             st.session_state.confirmed_match = None
-            if result is None and score >= 50:
+            if agent_result["match_score"] >= 50:
                 st.warning(
-                    f"Did you mean: {matched_name}? (match score: {score:.0f}/100)"
+                    f"Did you mean: {agent_result['suggested_name']}? "
+                    f"(match score: {agent_result['match_score']:.0f}/100)"
                 )
             st.error("Medicine not found. Try a different spelling.")
 
 if st.session_state.pending_match is not None:
     pending = st.session_state.pending_match
     st.warning(
-        f"Possible match: {pending['matched_name']} "
-        f"(match score: {pending['score']:.0f}/100)."
+        f"Possible match: {pending['medicine_name']} "
+        f"(match score: {pending['match_score']:.0f}/100)."
     )
     st.caption("Please confirm this is the medicine you meant before viewing results.")
 
@@ -208,15 +196,11 @@ if st.session_state.pending_match is not None:
 
 if st.session_state.confirmed_match is not None:
     confirmed = st.session_state.confirmed_match
-    render_results(
-        confirmed["medicine"],
-        confirmed["matched_name"],
-        confirmed["score"],
-    )
+    render_results(confirmed)
 
     if st.button("Save to profile"):
-        add_medicine(user_id, confirmed["matched_name"])
-        st.success(f"Saved {confirmed['matched_name']} to your medicine profile.")
+        add_medicine(user_id, confirmed["medicine_name"])
+        st.success(f"Saved {confirmed['medicine_name']} to your medicine profile.")
 
 
 st.markdown("---")
